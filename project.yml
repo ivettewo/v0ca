@@ -1,0 +1,55 @@
+name: v0ca
+options:
+  bundleIdPrefix: com.v0ca
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+
+packages:
+  WhisperKit:
+    url: https://github.com/argmaxinc/WhisperKit
+    from: 1.0.0
+  KeyboardShortcuts:
+    url: https://github.com/sindresorhus/KeyboardShortcuts
+    from: 1.10.0
+  FluidAudio:
+    url: https://github.com/FluidInference/FluidAudio
+    from: 0.15.5
+
+targets:
+  v0ca:
+    type: application
+    platform: macOS
+    sources:
+      # Заметки для разработчика в бандл не кладём (лицензии — кладём).
+      - path: v0ca
+        excludes:
+          - "**/*.md"
+    # Team ID и прочее машинно-специфичное — в Config/Local.xcconfig (не в гите).
+    configFiles:
+      Debug: Config/Local.xcconfig
+      Release: Config/Local.xcconfig
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.v0ca.app
+        MARKETING_VERSION: 1.0.0
+        CURRENT_PROJECT_VERSION: 1
+        GENERATE_INFOPLIST_FILE: NO
+        INFOPLIST_FILE: v0ca/Info.plist
+        SWIFT_VERSION: "5.10"
+        CODE_SIGN_IDENTITY: "Apple Development"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_ENTITLEMENTS: v0ca/v0ca.entitlements
+        ENABLE_APP_SANDBOX: NO
+        DEAD_CODE_STRIPPING: YES
+      configs:
+        Release:
+          # Xcode при подписи Development-сертификатом сам дописывает отладочные
+          # права, включая com.apple.security.get-task-allow (разрешает подключить
+          # отладчик к работающему приложению). В раздаваемой сборке это лишнее.
+          CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+    dependencies:
+      - package: WhisperKit
+      - package: KeyboardShortcuts
+      - package: FluidAudio

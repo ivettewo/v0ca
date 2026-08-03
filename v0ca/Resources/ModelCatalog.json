@@ -1,0 +1,247 @@
+[
+  {
+    "id": "openai_whisper-large-v3-v20240930_626MB",
+    "engine": "whisperKit",
+    "name": "Whisper Large v3 Turbo (компактная)",
+    "details": "Турбо-флагман: лучшее сочетание качества и скорости для диктовки на 100 языках.",
+    "sizeMB": 627,
+    "languages": "multilingual",
+    "accuracy": 9,
+    "speed": 7,
+    "recommended": true,
+    "quantized": true,
+    "translate": false
+  },
+  {
+    "id": "parakeet-tdt-v3",
+    "engine": "fluidAudio",
+    "name": "Parakeet TDT v3",
+    "details": "Сверхбыстрая расшифровка на 25 европейских языках (вкл. русский). Работает на Neural Engine.",
+    "sizeMB": 620,
+    "languages": "european",
+    "accuracy": 8,
+    "speed": 10,
+    "recommended": true
+  },
+  {
+    "id": "parakeet-tdt-v2",
+    "engine": "fluidAudio",
+    "name": "Parakeet TDT v2 (EN)",
+    "details": "Сверхбыстрая английская расшифровка, отличная точность. Работает на Neural Engine.",
+    "sizeMB": 600,
+    "languages": "englishOnly",
+    "accuracy": 8,
+    "speed": 10
+  },
+  {
+    "id": "openai_whisper-tiny",
+    "engine": "whisperKit",
+    "name": "Whisper Tiny",
+    "details": "Мгновенная расшифровка коротких заметок, работает даже на слабом железе.",
+    "sizeMB": 77,
+    "languages": "multilingual",
+    "accuracy": 4,
+    "speed": 10
+  },
+  {
+    "id": "openai_whisper-base",
+    "engine": "whisperKit",
+    "name": "Whisper Base",
+    "details": "Быстрая диктовка с минимальным расходом памяти.",
+    "sizeMB": 147,
+    "languages": "multilingual",
+    "accuracy": 5,
+    "speed": 9
+  },
+  {
+    "id": "openai_whisper-small_216MB",
+    "engine": "whisperKit",
+    "name": "Whisper Small (компактная)",
+    "details": "Баланс качества и скорости для повседневной диктовки: пунктуация, автоопределение языка.",
+    "sizeMB": 217,
+    "languages": "multilingual",
+    "accuracy": 7,
+    "speed": 8,
+    "recommended": true,
+    "quantized": true
+  },
+  {
+    "id": "openai_whisper-small",
+    "engine": "whisperKit",
+    "name": "Whisper Small",
+    "details": "Повседневная диктовка полной точности: пунктуация, автоопределение языка.",
+    "sizeMB": 486,
+    "languages": "multilingual",
+    "accuracy": 7,
+    "speed": 7,
+    "recommended": true
+  },
+  {
+    "id": "openai_whisper-medium",
+    "engine": "whisperKit",
+    "name": "Whisper Medium",
+    "details": "Тяжёлые записи: шум, несколько говорящих, длинные встречи.",
+    "sizeMB": 1530,
+    "languages": "multilingual",
+    "accuracy": 8,
+    "speed": 5
+  },
+  {
+    "id": "openai_whisper-large-v3-v20240930_547MB",
+    "engine": "whisperKit",
+    "name": "Whisper Large v3 Turbo (мини)",
+    "details": "Самый компактный турбо-флагман: быстрая диктовка на 100 языках.",
+    "sizeMB": 550,
+    "languages": "multilingual",
+    "accuracy": 8,
+    "speed": 8,
+    "quantized": true,
+    "translate": false
+  },
+  {
+    "id": "openai_whisper-large-v3-v20240930",
+    "engine": "whisperKit",
+    "name": "Whisper Large v3 Turbo",
+    "details": "Турбо-флагман полной точности: 100 языков, лучший баланс качества и скорости.",
+    "sizeMB": 1620,
+    "languages": "multilingual",
+    "accuracy": 9,
+    "speed": 6,
+    "translate": false
+  },
+  {
+    "id": "openai_whisper-large-v3_947MB",
+    "engine": "whisperKit",
+    "name": "Whisper Large v3 (компактная)",
+    "details": "Флагманское качество втрое меньшего размера: 100 языков.",
+    "sizeMB": 948,
+    "languages": "multilingual",
+    "accuracy": 9,
+    "speed": 4,
+    "quantized": true
+  },
+  {
+    "id": "openai_whisper-large-v3",
+    "engine": "whisperKit",
+    "name": "Whisper Large v3",
+    "details": "Максимальное качество: 100 языков, перевод на английский, длинные записи.",
+    "sizeMB": 3090,
+    "languages": "multilingual",
+    "accuracy": 10,
+    "speed": 3
+  },
+  {
+    "id": "openai_whisper-large-v2_949MB",
+    "engine": "whisperKit",
+    "name": "Whisper Large v2 (компактная)",
+    "details": "Проверенная классика прошлого поколения в компактном виде.",
+    "sizeMB": 952,
+    "languages": "multilingual",
+    "accuracy": 9,
+    "speed": 4,
+    "quantized": true
+  },
+  {
+    "id": "openai_whisper-large-v2",
+    "engine": "whisperKit",
+    "name": "Whisper Large v2",
+    "details": "Максимальное качество предыдущего поколения, полная точность.",
+    "sizeMB": 3090,
+    "languages": "multilingual",
+    "accuracy": 9,
+    "speed": 3
+  },
+  {
+    "id": "openai_whisper-tiny.en",
+    "engine": "whisperKit",
+    "name": "Whisper Tiny (EN)",
+    "details": "Мгновенные заметки на английском.",
+    "sizeMB": 153,
+    "languages": "englishOnly",
+    "accuracy": 5,
+    "speed": 10
+  },
+  {
+    "id": "openai_whisper-base.en",
+    "engine": "whisperKit",
+    "name": "Whisper Base (EN)",
+    "details": "Быстрая офлайн-диктовка на английском с минимальным расходом памяти.",
+    "sizeMB": 147,
+    "languages": "englishOnly",
+    "accuracy": 6,
+    "speed": 9
+  },
+  {
+    "id": "openai_whisper-small.en_217MB",
+    "engine": "whisperKit",
+    "name": "Whisper Small (EN, компактная)",
+    "details": "Повседневная диктовка на английском с хорошей пунктуацией.",
+    "sizeMB": 218,
+    "languages": "englishOnly",
+    "accuracy": 7,
+    "speed": 8,
+    "quantized": true
+  },
+  {
+    "id": "openai_whisper-small.en",
+    "engine": "whisperKit",
+    "name": "Whisper Small (EN)",
+    "details": "Английская диктовка полной точности с хорошей пунктуацией.",
+    "sizeMB": 487,
+    "languages": "englishOnly",
+    "accuracy": 7,
+    "speed": 7
+  },
+  {
+    "id": "openai_whisper-medium.en",
+    "engine": "whisperKit",
+    "name": "Whisper Medium (EN)",
+    "details": "Тяжёлые английские записи: шум, несколько говорящих, длинные встречи.",
+    "sizeMB": 1530,
+    "languages": "englishOnly",
+    "accuracy": 8,
+    "speed": 5
+  },
+  {
+    "id": "distil-whisper_distil-large-v3_594MB",
+    "engine": "whisperKit",
+    "name": "Distil Large v3 (EN, компактная)",
+    "details": "Дистиллированный флагман: качество Large при компактном размере. Только английский.",
+    "sizeMB": 595,
+    "languages": "englishOnly",
+    "accuracy": 8,
+    "speed": 7,
+    "quantized": true
+  },
+  {
+    "id": "distil-whisper_distil-large-v3",
+    "engine": "whisperKit",
+    "name": "Distil Large v3 (EN)",
+    "details": "Дистиллированный флагман полной точности для английского.",
+    "sizeMB": 1515,
+    "languages": "englishOnly",
+    "accuracy": 9,
+    "speed": 6
+  },
+  {
+    "id": "distil-whisper_distil-large-v3_turbo_600MB",
+    "engine": "whisperKit",
+    "name": "Distil Large v3 Turbo (EN, компактная)",
+    "details": "Быстрый и компактный: английская диктовка почти без компромиссов.",
+    "sizeMB": 607,
+    "languages": "englishOnly",
+    "accuracy": 8,
+    "speed": 8,
+    "quantized": true
+  },
+  {
+    "id": "distil-whisper_distil-large-v3_turbo",
+    "engine": "whisperKit",
+    "name": "Distil Large v3 Turbo (EN)",
+    "details": "Самый быстрый вариант дистиллированного флагмана для английского.",
+    "sizeMB": 1527,
+    "languages": "englishOnly",
+    "accuracy": 9,
+    "speed": 7
+  }
+]
