@@ -26,9 +26,15 @@ v0ca/
 │   └── History/          # GRDB/SwiftData: records, audio files
 ├── Features/
 │   ├── HUD/              # state machine + SwiftUI views for the states
-│   ├── Settings/         # 4 tabs
-│   └── Onboarding/       # permissions: microphone, Accessibility
-└── DesignSystem/         # tokens, fonts, components (Toggle, Dropdown, Chip…)
+│   └── Settings/         # tabs (incl. Onboarding) + ShortcutField (needs KeyboardShortcuts/Prefs)
+└── DesignSystem/         # no app dependencies, no localization — plain strings in, pixels out
+    ├── Tokens.swift      # colors, radii, fonts
+    ├── Buttons.swift     # DSButton (5 variants), DSIconAction
+    ├── Controls.swift    # AccentToggle, DSSegmentedControl, DSRadio
+    ├── Dropdown.swift    # DesignDropdown + floating NSPanel list
+    ├── Indicators.swift  # DSChip, DSProgressBar
+    ├── Layout.swift      # SettingsSection, SettingRow, RowDivider, SectionLabel
+    └── Modifiers.swift   # dsFieldStyle, hoverBackground, pointerCursor
 ```
 
 ## Key contracts

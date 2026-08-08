@@ -67,21 +67,16 @@ struct SoundTab: View {
     }
 
     private var levelMeter: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Capsule().fill(Tokens.surface2)
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [Tokens.success, Color(hex: 0xB4C94A), Tokens.processing],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: geometry.size.width * CGFloat(min(tester.level, 1)))
-                    .animation(.linear(duration: 0.08), value: tester.level)
-            }
-        }
-        .frame(width: 160, height: 6)
+        DSProgressBar(
+            fraction: CGFloat(min(tester.level, 1)),
+            height: 6,
+            fill: AnyShapeStyle(LinearGradient(
+                colors: [Tokens.success, Color(hex: 0xB4C94A), Tokens.processing],
+                startPoint: .leading,
+                endPoint: .trailing
+            ))
+        )
+        .frame(width: 160)
+        .animation(.linear(duration: 0.08), value: tester.level)
     }
 }

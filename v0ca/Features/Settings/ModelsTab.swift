@@ -70,7 +70,7 @@ struct ModelsTab: View {
         downloaded: Bool,
         first: Bool
     ) -> some View {
-        sectionLabel(title)
+        SectionLabel(title)
             .padding(.top, first ? 0 : 22)
             .padding(.bottom, 8)
         ForEach(Array(list.enumerated()), id: \.element.id) { index, model in
@@ -95,13 +95,6 @@ struct ModelsTab: View {
             }
             return matchesSearch && matchesLanguage
         }
-    }
-
-    private func sectionLabel(_ text: String) -> some View {
-        Text(text)
-            .font(Tokens.sans(11, weight: .medium))
-            .kerning(1.1)
-            .foregroundStyle(Tokens.text3)
     }
 
     /// Открыть папку с моделями в Finder — оттуда видно все скачанные модели и
@@ -186,13 +179,7 @@ private struct ModelCard: View {
     @ViewBuilder
     private var leadingIcon: some View {
         if downloaded {
-            // Радио-кружок: активная — толстое красное кольцо, иначе тонкое серое
-            Circle()
-                .strokeBorder(
-                    isActive ? Tokens.accent : Self.faint,
-                    lineWidth: isActive ? 5.5 : 1.5
-                )
-                .frame(width: 18, height: 18)
+            DSRadio(selected: isActive)
                 .padding(.top, 2)
         } else {
             Image(systemName: "arrow.down.to.line")
@@ -213,7 +200,7 @@ private struct ModelCard: View {
                     .foregroundStyle(isActive ? Tokens.accentHover : Tokens.text)
                 if isActive {
                     if models.loadState == .ready {
-                        chip(L("Активная"), background: Tokens.surface, foreground: Tokens.accentHover)
+                        DSChip(L("Активная"), background: Tokens.surface, foreground: Tokens.accentHover)
                     } else {
                         // Модель выбрана, но ещё грузится/греется — показываем это,
                         // чтобы было понятно, почему первая диктовка ждёт «Подготовку».
@@ -229,14 +216,14 @@ private struct ModelCard: View {
                     }
                 }
                 if model.recommended {
-                    chip(
+                    DSChip(
                         L("Рекомендуем"),
                         background: isActive ? Color.white.opacity(0.55) : Tokens.surface2,
                         foreground: isActive ? Tokens.accentHover : Tokens.text2
                     )
                 }
                 if model.languages == .englishOnly {
-                    chip(L("Только английский"), background: Tokens.surface2, foreground: Tokens.text2)
+                    DSChip(L("Только английский"), background: Tokens.surface2, foreground: Tokens.text2)
                 }
             }
 
@@ -285,17 +272,11 @@ private struct ModelCard: View {
                 .font(Tokens.sans(11))
                 .foregroundStyle(isActive ? Self.metaActive : Tokens.text3)
                 .frame(width: 58, alignment: .leading)
-            Capsule()
-                .fill(isActive ? Self.trackActive : Tokens.surface2)
-                .frame(height: 5)
-                .overlay(alignment: .leading) {
-                    GeometryReader { geometry in
-                        Capsule()
-                            .fill(isActive ? Tokens.accent : Tokens.text)
-                            .frame(width: geometry.size.width * CGFloat(value) / 10)
-                    }
-                }
-                .clipShape(Capsule())
+            DSProgressBar(
+                fraction: CGFloat(value) / 10,
+                track: isActive ? Self.trackActive : Tokens.surface2,
+                fill: AnyShapeStyle(isActive ? Tokens.accent : Tokens.text)
+            )
         }
     }
 
@@ -356,14 +337,5 @@ private struct ModelCard: View {
         if alert.runModal() == .alertFirstButtonReturn {
             models.delete(model.id)
         }
-    }
-
-    private func chip(_ text: String, background: Color, foreground: Color) -> some View {
-        Text(text)
-            .font(Tokens.sans(11, weight: .medium))
-            .foregroundStyle(foreground)
-            .frame(height: 20)
-            .padding(.horizontal, 8)
-            .background(background, in: Capsule())
     }
 }

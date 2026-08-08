@@ -17,7 +17,7 @@ struct HistoryTab: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionLabel(L("НАСТРОЙКИ"))
+            SectionLabel(L("НАСТРОЙКИ"))
                 .padding(.bottom, 4)
 
             settingRow(title: L("Размер истории"), subtitle: nil) {
@@ -58,7 +58,7 @@ struct HistoryTab: View {
                 }
             }
 
-            sectionLabel(L("ЗАПИСИ"))
+            SectionLabel(L("ЗАПИСИ"))
                 .padding(.top, 22)
                 .padding(.bottom, 10)
                 .overlay(alignment: .top) { Divider().overlay(Tokens.surface2) }
@@ -89,12 +89,12 @@ struct HistoryTab: View {
                     .font(Tokens.mono(11, weight: .medium))
                     .foregroundStyle(Tokens.text3)
                 Spacer()
-                iconButton("doc.on.doc", help: L("Скопировать")) {
+                DSIconAction("doc.on.doc", help: L("Скопировать")) {
                     let pasteboard = NSPasteboard.general
                     pasteboard.clearContents()
                     pasteboard.setString(record.text, forType: .string)
                 }
-                iconButton(
+                DSIconAction(
                     record.favorite ? "star.fill" : "star",
                     help: L("В избранное"),
                     tint: record.favorite ? Tokens.processing : Tokens.text2
@@ -106,11 +106,11 @@ struct HistoryTab: View {
                         .controlSize(.small)
                         .frame(width: 28, height: 28)
                 } else {
-                    iconButton("arrow.clockwise", help: L("Транскрибировать заново")) {
+                    DSIconAction("arrow.clockwise", help: L("Транскрибировать заново")) {
                         retranscribe(record)
                     }
                 }
-                iconButton("trash", help: L("Удалить"), hoverAccent: true) {
+                DSIconAction("trash", help: L("Удалить"), hoverAccent: true) {
                     if playback.playingID == record.id {
                         playback.stop()
                     }
@@ -138,17 +138,7 @@ struct HistoryTab: View {
                 .buttonStyle(.plain)
                 .pointerCursor()
 
-                Capsule()
-                    .fill(Tokens.surface2)
-                    .frame(height: 5)
-                    .overlay(alignment: .leading) {
-                        GeometryReader { geometry in
-                            Capsule()
-                                .fill(Tokens.accent)
-                                .frame(width: geometry.size.width * (playback.playingID == record.id ? playback.progress : 0))
-                        }
-                    }
-                    .clipShape(Capsule())
+                DSProgressBar(fraction: playback.playingID == record.id ? CGFloat(playback.progress) : 0)
 
                 Text(record.durationLabel)
                     .font(Tokens.mono(11, weight: .medium))
@@ -175,13 +165,6 @@ struct HistoryTab: View {
 
     // MARK: - Мелочи
 
-    private func sectionLabel(_ text: String) -> some View {
-        Text(text)
-            .font(Tokens.sans(11, weight: .medium))
-            .kerning(1.1)
-            .foregroundStyle(Tokens.text3)
-    }
-
     private func settingRow(
         title: String,
         subtitle: String?,
@@ -198,25 +181,5 @@ struct HistoryTab: View {
             trailing()
         }
         .padding(.vertical, 12)
-    }
-
-    private func iconButton(
-        _ symbol: String,
-        help: String,
-        tint: Color = Tokens.text2,
-        hoverAccent: Bool = false,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 12))
-                .foregroundStyle(tint)
-                .frame(width: 28, height: 28)
-                .hoverBackground(hoverAccent ? Tokens.accentSoft : Tokens.surface2)
-                .contentShape(RoundedRectangle(cornerRadius: 7))
-        }
-        .buttonStyle(.plain)
-        .pointerCursor()
-        .help(help)
     }
 }
