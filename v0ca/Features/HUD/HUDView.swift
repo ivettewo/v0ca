@@ -243,10 +243,10 @@ private struct SpinnerRing: View {
     var body: some View {
         ZStack {
             Circle()
-                .stroke(Color(hex: 0x9B9BA3).opacity(0.28), lineWidth: 2)
+                .stroke(Tokens.text3.opacity(0.28), lineWidth: 2)
             Circle()
                 .trim(from: 0, to: 0.25)
-                .stroke(Color(hex: 0x9B9BA3), style: StrokeStyle(lineWidth: 2, lineCap: .round))
+                .stroke(Tokens.text3, style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .rotationEffect(.degrees(rotating ? 360 : 0))
         }
         .frame(width: 14, height: 14)

@@ -41,7 +41,7 @@ struct DesignDropdown<Value: Hashable>: View {
             // Фокус-обводка при открытии: box-shadow 0 0 0 3px #FCEBEB
             .background(
                 RoundedRectangle(cornerRadius: Tokens.radiusControl)
-                    .fill(open ? Color(hex: 0xFCEBEB) : .clear)
+                    .fill(open ? Tokens.accentSoft : .clear)
                     .padding(-3)
             )
             .contentShape(RoundedRectangle(cornerRadius: Tokens.radiusControl))
@@ -104,7 +104,7 @@ private struct DropdownList<Value: Hashable>: View {
                     .frame(maxWidth: .infinity)
                     .background(
                         RoundedRectangle(cornerRadius: 7)
-                            .fill(isSelected ? Color(hex: 0xFCEBEB) : .clear)
+                            .fill(isSelected ? Tokens.accentSoft : .clear)
                     )
                     .contentShape(RoundedRectangle(cornerRadius: 7))
                 }
