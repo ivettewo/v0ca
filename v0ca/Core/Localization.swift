@@ -38,6 +38,7 @@ enum L10n {
     static let en: [String: String] = [
         // Сайдбар / вкладки
         "Настройки": "Settings",
+        "Онбординг": "Onboarding",
         "Общие": "General",
         "Модели": "Models",
         "Звук": "Sound",
@@ -57,6 +58,23 @@ enum L10n {
         "Ошибка модели": "Model error",
         "Расшифровка…": "Transcribing…",
 
+        // Онбординг
+        "Быстрый старт": "Quick start",
+        "Выдать разрешения": "Grant permissions",
+        "Микрофон — чтобы записывать голос, Универсальный доступ — чтобы вставлять текст":
+            "Microphone to record your voice, Accessibility to insert the text",
+        "Скачать модель": "Download a model",
+        "Подойдёт любая из раздела «Рекомендуем» — дождись конца загрузки":
+            "Any model from the Recommended section will do — wait for the download to finish",
+        "Назначить комбинацию записи": "Set the recording shortcut",
+        "Нажми на поле и зажми сочетание — можно просто fn":
+            "Click the field and press a combination — fn alone works",
+        "Перейти": "Go",
+        "Завершить онбординг": "Finish onboarding",
+        "Пропустить": "Skip",
+        "Шаги можно пройти в любом порядке — после завершения вкладка исчезнет.":
+            "Steps can be done in any order — the tab disappears once you finish.",
+
         // Общие — секции и строки
         "Запись": "Recording",
         "Нажми и говори": "Push to talk",
@@ -72,7 +90,7 @@ enum L10n {
         "Комбинации": "Shortcuts",
         "Начать / остановить запись": "Start / stop recording",
         "Отменить запись": "Cancel recording",
-        "Нажмите…": "Press…",
+        "Нажмите новую комбинацию…": "Press a new combination…",
         "Вывод": "Output",
         "Метод вставки": "Insertion method",
         "Обработка буфера обмена": "Clipboard handling",

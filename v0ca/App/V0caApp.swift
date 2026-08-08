@@ -47,9 +47,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.onMicDenied = { [weak self] in
             self?.settingsWindow.show(tab: .permissions)
         }
-        // Не хватает разрешений — открываем настройки сразу на вкладке «Разрешения».
-        if !PermissionsTab.allGranted {
-            settingsWindow.show(tab: .permissions)
+        // Первый запуск — открываем настройки на онбординге; после его завершения
+        // сюда больше не попадаем (ключ в UserDefaults).
+        if !Prefs.onboardingDone {
+            settingsWindow.show(tab: .onboarding)
         }
     }
 

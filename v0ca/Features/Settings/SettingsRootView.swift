@@ -5,6 +5,7 @@ struct SettingsRootView: View {
     let coordinator: RecordingCoordinator
 
     enum Tab: String, CaseIterable {
+        case onboarding = "Онбординг"
         case general = "Общие"
         case models = "Модели"
         case sound = "Звук"
@@ -13,6 +14,7 @@ struct SettingsRootView: View {
 
         var icon: String {
             switch self {
+            case .onboarding: "sparkles"
             case .general: "gearshape"
             case .models: "square.stack.3d.up"
             case .sound: "mic"
@@ -23,6 +25,12 @@ struct SettingsRootView: View {
     }
 
     @Bindable var router: SettingsRouter
+    @AppStorage(Prefs.Key.onboardingDone) private var onboardingDone = false
+
+    /// «Онбординг» показывается только пока не завершён.
+    private var visibleTabs: [Tab] {
+        onboardingDone ? Tab.allCases.filter { $0 != .onboarding } : Tab.allCases
+    }
 
     private var tab: Tab { router.tab }
 
@@ -55,7 +63,7 @@ struct SettingsRootView: View {
             .padding(.bottom, 18)
 
             VStack(spacing: 0) {
-                ForEach(Tab.allCases, id: \.self) { item in
+                ForEach(visibleTabs, id: \.self) { item in
                     tabButton(item)
                 }
             }
@@ -106,6 +114,7 @@ struct SettingsRootView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 24) {
                 switch tab {
+                case .onboarding: OnboardingTab(models: coordinator.models, router: router)
                 case .general: GeneralTab(coordinator: coordinator)
                 case .models: ModelsTab(models: coordinator.models)
                 case .sound: SoundTab()

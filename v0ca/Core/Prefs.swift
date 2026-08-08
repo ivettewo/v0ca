@@ -16,6 +16,8 @@ enum Prefs {
         static let historyAutoDelete = "historyAutoDelete"
         /// Клавиша ⌥/Carbon-хоткей не умеет fn — запись триггерится через CGEventTap.
         static let toggleRecordingUsesFn = "toggleRecordingUsesFn"
+        /// Онбординг завершён (или пропущен): вкладка скрыта и при запуске не открывается.
+        static let onboardingDone = "onboardingDone"
     }
 
     enum HistoryAutoDelete: String, CaseIterable {
@@ -184,5 +186,9 @@ enum Prefs {
     /// Использовать клавишу fn (🌐 Globe) как триггер записи вместо Carbon-хоткея.
     static var toggleRecordingUsesFn: Bool {
         UserDefaults.standard.bool(forKey: Key.toggleRecordingUsesFn)
+    }
+
+    static var onboardingDone: Bool {
+        UserDefaults.standard.bool(forKey: Key.onboardingDone)
     }
 }
