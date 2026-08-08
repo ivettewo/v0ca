@@ -9,7 +9,7 @@ import OSLog
 final class HistoryStore {
     private(set) var records: [HistoryRecord] = [] // новые сверху
 
-    @ObservationIgnored private let log = Logger(subsystem: "com.v0ca.app", category: "HistoryStore")
+    @ObservationIgnored private let log = Logger(category: "HistoryStore")
 
     static var baseFolder: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]

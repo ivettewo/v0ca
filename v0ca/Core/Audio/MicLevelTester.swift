@@ -14,7 +14,7 @@ final class MicLevelTester: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
     @ObservationIgnored private let session = AVCaptureSession()
     @ObservationIgnored private let output = AVCaptureAudioDataOutput()
     @ObservationIgnored private let queue = DispatchQueue(label: "com.v0ca.mic-tester")
-    @ObservationIgnored private let log = Logger(subsystem: "com.v0ca.app", category: "MicLevelTester")
+    @ObservationIgnored private let log = Logger(category: "MicLevelTester")
 
     @ObservationIgnored private var isStarting = false
 

@@ -74,7 +74,7 @@ import OSLog
 
 enum ModelCatalog {
     static func load() -> [ModelDescriptor] {
-        let log = Logger(subsystem: "com.v0ca.app", category: "ModelCatalog")
+        let log = Logger(category: "ModelCatalog")
         guard let url = Bundle.main.url(forResource: "ModelCatalog", withExtension: "json") else {
             log.error("ModelCatalog.json не найден в бандле")
             return []

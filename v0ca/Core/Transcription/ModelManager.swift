@@ -34,7 +34,7 @@ final class ModelManager {
 
     @ObservationIgnored private var engine: TranscriptionEngine?
     @ObservationIgnored private var downloadTasks: [String: Task<Void, Never>] = [:]
-    @ObservationIgnored private let log = Logger(subsystem: "com.v0ca.app", category: "ModelManager")
+    @ObservationIgnored private let log = Logger(category: "ModelManager")
 
     init() {
         catalog = ModelCatalog.load()

@@ -18,7 +18,7 @@ final class FnHotkeyMonitor {
     private var tap: CFMachPort?
     private var runLoopSource: CFRunLoopSource?
     private var fnIsDown = false
-    private let log = Logger(subsystem: "com.v0ca.app", category: "FnHotkeyMonitor")
+    private let log = Logger(category: "FnHotkeyMonitor")
 
     /// Ставит event tap. Идемпотентно; без Accessibility молча ничего не делает.
     func start() {

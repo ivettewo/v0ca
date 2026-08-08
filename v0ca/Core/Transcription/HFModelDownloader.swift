@@ -10,7 +10,7 @@ import OSLog
 /// папку, где WhisperKit потом ищет модель, поэтому его загрузчик не включается.
 enum HFModelDownloader {
     static let repo = "argmaxinc/whisperkit-coreml"
-    private static let log = Logger(subsystem: "com.v0ca.app", category: "HFModelDownloader")
+    private static let log = Logger(category: "HFModelDownloader")
 
     enum DownloadError: Error { case listFailed(String), notFound(String), moveFailed }
 

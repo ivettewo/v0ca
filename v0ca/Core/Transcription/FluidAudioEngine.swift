@@ -7,7 +7,7 @@ import OSLog
 /// Модели качаются самим FluidAudio в `~/Library/Application Support/FluidAudio/Models`.
 final class FluidAudioEngine: TranscriptionEngine {
     private let version: AsrModelVersion
-    private let log = Logger(subsystem: "com.v0ca.app", category: "FluidAudioEngine")
+    private let log = Logger(category: "FluidAudioEngine")
     private var manager: AsrManager?
     private var loadTask: Task<Void, Error>?
 

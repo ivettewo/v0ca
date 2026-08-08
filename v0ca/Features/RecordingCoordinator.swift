@@ -35,7 +35,7 @@ final class RecordingCoordinator {
     @ObservationIgnored private let fnMonitor = FnHotkeyMonitor()
     @ObservationIgnored private var transcriptionTask: Task<Void, Never>?
     @ObservationIgnored private var unloadTimer: Task<Void, Never>?
-    @ObservationIgnored private let log = Logger(subsystem: "com.v0ca.app", category: "RecordingCoordinator")
+    @ObservationIgnored private let log = Logger(category: "RecordingCoordinator")
 
     private var isPushToTalk: Bool {
         UserDefaults.standard.bool(forKey: Prefs.Key.pushToTalk)

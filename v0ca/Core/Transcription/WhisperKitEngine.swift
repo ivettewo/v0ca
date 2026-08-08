@@ -4,7 +4,7 @@ import WhisperKit
 
 final class WhisperKitEngine: TranscriptionEngine {
     private let modelID: String
-    private let log = Logger(subsystem: "com.v0ca.app", category: "WhisperKitEngine")
+    private let log = Logger(category: "WhisperKitEngine")
     private var whisper: WhisperKit?
     private var loadTask: Task<Void, Error>?
 

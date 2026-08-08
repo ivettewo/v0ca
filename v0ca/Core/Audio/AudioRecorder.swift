@@ -10,7 +10,7 @@ final class AudioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegat
     private let queue = DispatchQueue(label: "com.v0ca.mic-capture")
     private var samples: [Float] = []
     private let lock = NSLock()
-    private let log = Logger(subsystem: "com.v0ca.app", category: "AudioRecorder")
+    private let log = Logger(category: "AudioRecorder")
 
     /// RMS-уровень для волны HUD, вызывается на главном потоке.
     var onLevel: ((Float) -> Void)?
