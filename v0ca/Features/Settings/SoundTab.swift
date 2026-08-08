@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SoundTab: View {
-    @AppStorage(AudioDevices.selectedUIDKey) private var selectedMicUID: String = ""
+    @AppStorage(Prefs.Key.inputDeviceUID) private var selectedMicUID: String = ""
     @AppStorage(Prefs.Key.soundStart) private var soundStart: Bool = true
     @AppStorage(Prefs.Key.soundDone) private var soundDone: Bool = true
     @State private var devices: [AudioInputDevice] = []

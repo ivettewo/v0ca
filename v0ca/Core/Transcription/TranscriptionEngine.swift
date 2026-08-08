@@ -34,10 +34,8 @@ enum TranscriptionError: Error {
 
 /// Настройка «Язык распознавания». Хранится в UserDefaults: "auto" или ISO-код.
 enum RecognitionLanguage {
-    static let key = "recognitionLanguage"
-
     static var current: String? {
-        let value = UserDefaults.standard.string(forKey: key) ?? "auto"
+        let value = UserDefaults.standard.string(forKey: Prefs.Key.recognitionLanguage) ?? "auto"
         return value == "auto" ? nil : value
     }
 }

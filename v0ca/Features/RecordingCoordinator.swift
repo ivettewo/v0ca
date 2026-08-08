@@ -16,8 +16,6 @@ final class RecordingCoordinator {
         case done
     }
 
-    static let pushToTalkKey = "pushToTalk"
-    static let unloadAfterMinutesKey = "unloadModelAfterMinutes"
 
     private(set) var state: State = .hidden {
         didSet { stateDidChange?(state) }
@@ -40,12 +38,12 @@ final class RecordingCoordinator {
     @ObservationIgnored private let log = Logger(subsystem: "com.v0ca.app", category: "RecordingCoordinator")
 
     private var isPushToTalk: Bool {
-        UserDefaults.standard.bool(forKey: Self.pushToTalkKey)
+        UserDefaults.standard.bool(forKey: Prefs.Key.pushToTalk)
     }
 
     /// Минуты бездействия до выгрузки модели; 0 — никогда. По умолчанию 15 (docs/MODELS.md).
     private var unloadAfterMinutes: Int {
-        UserDefaults.standard.object(forKey: Self.unloadAfterMinutesKey) as? Int ?? 15
+        UserDefaults.standard.object(forKey: Prefs.Key.unloadModelAfterMinutes) as? Int ?? 15
     }
 
     init(models: ModelManager, history: HistoryStore) {

@@ -5,9 +5,9 @@ import SwiftUI
 struct GeneralTab: View {
     let coordinator: RecordingCoordinator
 
-    @AppStorage(RecognitionLanguage.key) private var recognitionLanguage: String = "auto"
-    @AppStorage(RecordingCoordinator.pushToTalkKey) private var pushToTalk: Bool = false
-    @AppStorage(RecordingCoordinator.unloadAfterMinutesKey) private var unloadAfterMinutes: Int = 15
+    @AppStorage(Prefs.Key.recognitionLanguage) private var recognitionLanguage: String = "auto"
+    @AppStorage(Prefs.Key.pushToTalk) private var pushToTalk: Bool = false
+    @AppStorage(Prefs.Key.unloadModelAfterMinutes) private var unloadAfterMinutes: Int = 15
     @AppStorage(Prefs.Key.translateToEnglish) private var translateToEnglish: Bool = false
     @AppStorage(Prefs.Key.appendSpace) private var appendSpace: Bool = true
     @AppStorage(Prefs.Key.insertMethod) private var insertMethod: String = Prefs.InsertMethod.paste.rawValue

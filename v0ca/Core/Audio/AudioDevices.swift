@@ -8,9 +8,8 @@ struct AudioInputDevice: Identifiable, Hashable {
 }
 
 /// Список входных аудиоустройств — через AVCaptureDevice, без ручного CoreAudio.
+/// Ключ выбранного устройства — `Prefs.Key.inputDeviceUID`.
 enum AudioDevices {
-    static let selectedUIDKey = "inputDeviceUID"
-
     static func inputDevices() -> [AudioInputDevice] {
         let discovery = AVCaptureDevice.DiscoverySession(
             deviceTypes: [.microphone, .external],

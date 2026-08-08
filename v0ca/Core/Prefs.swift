@@ -18,6 +18,17 @@ enum Prefs {
         static let toggleRecordingUsesFn = "toggleRecordingUsesFn"
         /// Онбординг завершён (или пропущен): вкладка скрыта и при запуске не открывается.
         static let onboardingDone = "onboardingDone"
+
+        // Ключи ниже читаются доменной логикой в своих модулях (AppLanguage,
+        // RecognitionLanguage, ModelManager…) — здесь только строки, чтобы все
+        // ключи UserDefaults жили в одном месте. Строки менять нельзя: это
+        // сбросит сохранённые настройки пользователей.
+        static let interfaceLanguage = "interfaceLanguage"
+        static let recognitionLanguage = "recognitionLanguage"
+        static let inputDeviceUID = "inputDeviceUID"
+        static let activeModelID = "activeModelID"
+        static let pushToTalk = "pushToTalk"
+        static let unloadModelAfterMinutes = "unloadModelAfterMinutes"
     }
 
     enum HistoryAutoDelete: String, CaseIterable {

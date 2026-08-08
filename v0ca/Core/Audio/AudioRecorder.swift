@@ -45,7 +45,7 @@ final class AudioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegat
 
     /// Выбранный микрофон (по UID из настроек) или системный по умолчанию.
     static func selectedDevice() -> AVCaptureDevice? {
-        let uid = UserDefaults.standard.string(forKey: AudioDevices.selectedUIDKey) ?? ""
+        let uid = UserDefaults.standard.string(forKey: Prefs.Key.inputDeviceUID) ?? ""
         if !uid.isEmpty, let device = AVCaptureDevice(uniqueID: uid) {
             return device
         }

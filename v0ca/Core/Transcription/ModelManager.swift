@@ -25,7 +25,6 @@ final class ModelManager {
         case downloaded
     }
 
-    static let activeModelKey = "activeModelID"
     static let defaultModelID = "openai_whisper-small_216MB"
 
     let catalog: [ModelDescriptor]
@@ -41,12 +40,12 @@ final class ModelManager {
         catalog = ModelCatalog.load()
         // Если сохранённая активная модель больше не в каталоге (например, после
         // перехода на компактные варианты) — мигрируем на дефолтную.
-        let saved = UserDefaults.standard.string(forKey: Self.activeModelKey)
+        let saved = UserDefaults.standard.string(forKey: Prefs.Key.activeModelID)
         if let saved, catalog.contains(where: { $0.id == saved }) {
             activeModelID = saved
         } else {
             activeModelID = Self.defaultModelID
-            UserDefaults.standard.set(activeModelID, forKey: Self.activeModelKey)
+            UserDefaults.standard.set(activeModelID, forKey: Prefs.Key.activeModelID)
         }
         refreshDiskStates()
     }
@@ -169,7 +168,7 @@ final class ModelManager {
         guard id != activeModelID, catalog.contains(where: { $0.id == id }) else { return }
         unload()
         activeModelID = id
-        UserDefaults.standard.set(id, forKey: Self.activeModelKey)
+        UserDefaults.standard.set(id, forKey: Prefs.Key.activeModelID)
         log.info("Активная модель: \(id, privacy: .public)")
         Task { await ensureLoaded() }
     }

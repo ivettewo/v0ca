@@ -9,7 +9,6 @@ import Observation
 @Observable
 final class AppLanguage {
     static let shared = AppLanguage()
-    static let key = "interfaceLanguage"
 
     enum Code: String, CaseIterable {
         case ru, en
@@ -17,11 +16,11 @@ final class AppLanguage {
     }
 
     var code: Code {
-        didSet { UserDefaults.standard.set(code.rawValue, forKey: Self.key) }
+        didSet { UserDefaults.standard.set(code.rawValue, forKey: Prefs.Key.interfaceLanguage) }
     }
 
     private init() {
-        let saved = UserDefaults.standard.string(forKey: Self.key) ?? Code.en.rawValue
+        let saved = UserDefaults.standard.string(forKey: Prefs.Key.interfaceLanguage) ?? Code.en.rawValue
         code = Code(rawValue: saved) ?? .en
     }
 }
