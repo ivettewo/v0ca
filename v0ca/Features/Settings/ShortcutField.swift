@@ -15,6 +15,9 @@ struct ShortcutField: View {
     let name: KeyboardShortcuts.Name
     /// Ключ UserDefaults «эта комбинация — fn». Если задан, поле умеет ловить fn.
     var fnPrefKey: String?
+    /// Вызывается после назначения новой комбинации (включая fn) — для внешних
+    /// превью вроде больших клавиш в онбординге.
+    var onChange: (() -> Void)?
 
     @State private var isRecording = false
     @State private var keys: [String] = []
@@ -27,6 +30,11 @@ struct ShortcutField: View {
         return UserDefaults.standard.bool(forKey: fnPrefKey)
     }
 
+    /// Капсула 34px — единый вид поля в настройках и онбординге
+    /// (макет «Настройки · Новые экраны»).
+    private let height: CGFloat = 34
+    private let radius: CGFloat = 17
+
     var body: some View {
         Button {
             isRecording ? stopRecording() : startRecording()
@@ -38,7 +46,7 @@ struct ShortcutField: View {
                     idleLabel
                 }
             }
-            .contentShape(RoundedRectangle(cornerRadius: Tokens.radiusControl))
+            .contentShape(RoundedRectangle(cornerRadius: radius))
         }
         .buttonStyle(.plain)
         .pointerCursor()
@@ -59,14 +67,14 @@ struct ShortcutField: View {
             }
         }
         .padding(.horizontal, 10)
-        .frame(height: 32)
+        .frame(height: height)
         .background(
             hovering ? Tokens.background : Tokens.surface,
-            in: RoundedRectangle(cornerRadius: Tokens.radiusControl)
+            in: RoundedRectangle(cornerRadius: radius)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: Tokens.radiusControl)
-                .strokeBorder(hovering ? Tokens.text3 : Tokens.border, lineWidth: 1)
+            RoundedRectangle(cornerRadius: radius)
+                .strokeBorder(hovering ? Tokens.text3 : Tokens.controlBorder, lineWidth: 1)
         )
     }
 
@@ -77,10 +85,10 @@ struct ShortcutField: View {
             .foregroundStyle(Tokens.accentHover)
             .frame(minWidth: 172)
             .padding(.horizontal, 12)
-            .frame(height: 32)
-            .background(Tokens.accentSoft, in: RoundedRectangle(cornerRadius: Tokens.radiusControl))
+            .frame(height: height)
+            .background(Tokens.accentSoft, in: RoundedRectangle(cornerRadius: radius))
             .overlay(
-                RoundedRectangle(cornerRadius: Tokens.radiusControl)
+                RoundedRectangle(cornerRadius: radius)
                     .strokeBorder(Tokens.accent, style: StrokeStyle(lineWidth: 1.5, dash: [4, 3]))
             )
     }
@@ -99,7 +107,8 @@ struct ShortcutField: View {
     }
 
     /// Комбинация → отдельные клавиши в каноничном порядке модификаторов ⌃⌥⇧⌘.
-    private func keyParts(_ shortcut: KeyboardShortcuts.Shortcut) -> [String] {
+    /// Статичный: онбординг использует его для больших клавиш-превью.
+    static func keyParts(_ shortcut: KeyboardShortcuts.Shortcut) -> [String] {
         var parts: [String] = []
         let modifiers = shortcut.modifiers
         if modifiers.contains(.control) { parts.append("⌃") }
@@ -130,6 +139,7 @@ struct ShortcutField: View {
                 KeyboardShortcuts.setShortcut(shortcut, for: name)
                 refresh()
                 stopRecording()
+                onChange?()
                 return nil
             }
             return event
@@ -142,6 +152,7 @@ struct ShortcutField: View {
                 KeyboardShortcuts.setShortcut(nil, for: name) // fn заменяет Carbon-хоткей
                 refresh()
                 stopRecording()
+                onChange?()
                 return nil
             }
             return event
@@ -166,7 +177,7 @@ struct ShortcutField: View {
         if usesFn {
             keys = ["fn"]
         } else if let shortcut = KeyboardShortcuts.getShortcut(for: name) {
-            keys = keyParts(shortcut)
+            keys = Self.keyParts(shortcut)
         } else {
             keys = []
         }

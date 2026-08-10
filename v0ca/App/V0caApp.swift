@@ -18,16 +18,26 @@ struct V0caApp: App {
 private struct MenuContent: View {
     let appDelegate: AppDelegate
 
+    @AppStorage(Prefs.Key.onboardingDone) private var onboardingDone = false
+
     var body: some View {
-        Button(appDelegate.coordinator.state == .recording ? L("Остановить запись") : L("Начать запись")) {
-            appDelegate.coordinator.toggle()
-        }
-        if case .downloading(let percent) = appDelegate.coordinator.modelState {
-            Text("\(L("Загрузка модели…")) \(percent)%")
-        }
-        Divider()
-        Button(L("Настройки…")) {
-            appDelegate.settingsWindow.show()
+        if onboardingDone {
+            Button(appDelegate.coordinator.state == .recording ? L("Остановить запись") : L("Начать запись")) {
+                appDelegate.coordinator.toggle()
+            }
+            if case .downloading(let percent) = appDelegate.coordinator.modelState {
+                Text("\(L("Загрузка модели…")) \(percent)%")
+            }
+            Divider()
+            Button(L("Настройки…")) {
+                appDelegate.settingsWindow.show()
+            }
+        } else {
+            // До завершения онбординга запись выключена и настройки не открываем —
+            // только окно настройки первого запуска.
+            Button(L("Продолжить настройку…")) {
+                appDelegate.showOnboarding()
+            }
         }
         Divider()
         Button(L("Выйти из v0ca")) {
@@ -38,20 +48,38 @@ private struct MenuContent: View {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
-    let coordinator = RecordingCoordinator(models: ModelManager(), history: HistoryStore())
+    let coordinator = RecordingCoordinator(
+        models: ModelManager(),
+        history: HistoryStore(),
+        stats: StatsStore()
+    )
     private(set) lazy var settingsWindow = SettingsWindowController(coordinator: coordinator)
+    private lazy var onboardingWindow = OnboardingWindowController(models: coordinator.models)
     private var hud: HUDPanelController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // Отладочный рендер скриншотов онбординга — рендерит и завершает приложение.
+        if OnboardingScreenshots.runIfRequested(models: coordinator.models) {
+            return
+        }
+        Theme.apply()
         hud = HUDPanelController(coordinator: coordinator)
+        settingsWindow.openOnboarding = { [weak self] in
+            self?.onboardingWindow.show()
+        }
         coordinator.onMicDenied = { [weak self] in
             self?.settingsWindow.show(tab: .permissions)
         }
-        // Первый запуск — открываем настройки на онбординге; после его завершения
-        // сюда больше не попадаем (ключ в UserDefaults).
+        // Первый запуск (метки о пройденном онбординге нет) — только окно
+        // онбординга: запись и настройки недоступны, пока не нажата «Готово».
         if !Prefs.onboardingDone {
-            settingsWindow.show(tab: .onboarding)
+            onboardingWindow.show()
         }
+    }
+
+    /// Открыть окно онбординга (меню-бар до завершения настройки).
+    func showOnboarding() {
+        onboardingWindow.show()
     }
 
     /// Возврат в приложение — повторно пробуем поднять fn-монитор (Accessibility
@@ -60,9 +88,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.startFnMonitorIfNeeded()
     }
 
-    /// Клик по иконке в Доке — открыть настройки.
+    /// Клик по иконке в Доке — открыть настройки (или онбординг, пока не пройден).
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        settingsWindow.show()
+        if Prefs.onboardingDone {
+            settingsWindow.show()
+        } else {
+            onboardingWindow.show()
+        }
         return true
     }
 }

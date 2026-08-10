@@ -24,6 +24,7 @@ final class RecordingCoordinator {
 
     let models: ModelManager
     let history: HistoryStore
+    let stats: StatsStore
 
     var modelState: ModelManager.LoadState { models.loadState }
 
@@ -46,9 +47,10 @@ final class RecordingCoordinator {
         UserDefaults.standard.object(forKey: Prefs.Key.unloadModelAfterMinutes) as? Int ?? 15
     }
 
-    init(models: ModelManager, history: HistoryStore) {
+    init(models: ModelManager, history: HistoryStore, stats: StatsStore) {
         self.models = models
         self.history = history
+        self.stats = stats
 
         // Push-to-talk: запись идёт, пока клавиша удерживается.
         KeyboardShortcuts.onKeyDown(for: .toggleRecording) { [weak self] in
@@ -72,6 +74,17 @@ final class RecordingCoordinator {
         }
         KeyboardShortcuts.disable(.cancelRecording)
 
+        // Esc через CGEventTap: Carbon-хоткей выше не срабатывает, пока в
+        // push-to-talk зажата fn/⌥ (событие приходит как «fn+Esc»). Tap ловит
+        // Esc с любыми модификаторами; вне записи событие не трогаем.
+        fnMonitor.onEscape = { [weak self] in
+            guard let self, self.state == .recording || self.state == .processing else {
+                return false
+            }
+            self.cancel()
+            return true
+        }
+
         // Клавиша fn (Carbon её не умеет) — отдельный CGEventTap. Логика та же,
         // что у toggle-хоткея, но только когда пользователь назначил fn.
         fnMonitor.onFnDown = { [weak self] in
@@ -92,8 +105,12 @@ final class RecordingCoordinator {
         }
         fnMonitor.start()
 
-        // Предзагрузка при старте: к первому нажатию хоткея модель уже горячая (docs/MODELS.md).
-        Task { await models.ensureLoaded() }
+        // Предзагрузка при старте: к первому нажатию хоткея модель уже горячая
+        // (docs/MODELS.md). До завершения онбординга не греем: ensureLoaded качает
+        // активную модель, а пользователь ещё не выбрал её на шаге моделей.
+        if Prefs.onboardingDone {
+            Task { await models.ensureLoaded() }
+        }
     }
 
     /// Повторная попытка поднять fn-монитор — на случай, если Accessibility
@@ -125,6 +142,9 @@ final class RecordingCoordinator {
     }
 
     private func start() {
+        // Пока онбординг не завершён, диктовка выключена: единая точка входа
+        // для всех триггеров (хоткей, fn, push-to-talk, меню-бар).
+        guard Prefs.onboardingDone else { return }
         Task {
             guard await AudioRecorder.requestMicAccess() == .granted else {
                 log.error("Нет разрешения на микрофон — открываю настройки")
@@ -168,6 +188,7 @@ final class RecordingCoordinator {
                 guard !Task.isCancelled else { return }
                 if !text.isEmpty {
                     history.add(samples: samples, text: text)
+                    stats.addDictation(text: text)
                     if Prefs.appendSpace {
                         text += " "
                     }
