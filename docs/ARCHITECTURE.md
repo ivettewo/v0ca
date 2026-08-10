@@ -20,15 +20,20 @@ v0ca/
 │   │   ├── TranscriptionEngine.swift    # protocol
 │   │   ├── WhisperKitEngine.swift       # the Whisper family (CoreML/ANE)
 │   │   ├── FluidAudioEngine.swift       # Parakeet and others
-│   │   └── ModelCatalog.swift           # JSON catalog of 30–40 models
+│   │   └── ModelDescriptor.swift        # descriptors + JSON catalog loading
 │   ├── Localization.swift # AppLanguage (ru/en) + L("русский ключ") lookup table
 │   ├── Insertion/        # text insertion: clipboard + CGEvent ⌘V
-│   └── History/          # GRDB/SwiftData: records, audio files
+│   └── History/          # JSON index + WAV files; StatsStore — daily dictation stats
 ├── Features/
 │   ├── HUD/              # state machine + SwiftUI views for the states
-│   └── Settings/         # tabs (incl. Onboarding) + ShortcutField (needs KeyboardShortcuts/Prefs)
+│   ├── Onboarding/       # first-run wizard window (8 screens, gates recording)
+│   └── Settings/         # tabs + ShortcutField (needs KeyboardShortcuts/Prefs)
 └── DesignSystem/         # no app dependencies, no localization — plain strings in, pixels out
-    ├── Tokens.swift      # colors, radii, fonts
+    ├── Tokens.swift      # colors (dynamic light/dark pairs), radii, fonts
+    ├── Accent.swift      # user accent color: AccentStore + generated families
+    ├── Theme.swift       # light / dark / system appearance switching
+    ├── HeaderGradients.swift # gradient presets for tab and onboarding headers
+    ├── WindowChrome.swift    # shared 32px title bar strip
     ├── Buttons.swift     # DSButton (5 variants), DSIconAction
     ├── Controls.swift    # AccentToggle, DSSegmentedControl, DSRadio
     ├── Dropdown.swift    # DesignDropdown + floating NSPanel list

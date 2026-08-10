@@ -1,6 +1,6 @@
 # v0ca. — Model Catalog
 
-The catalog is stored as `ModelCatalog.json` in the bundle; each entry is a `ModelDescriptor` (see ARCHITECTURE.md). All models run fully locally. Two engines:
+The catalog is stored as `ModelCatalog.json` in the bundle; each entry is a `ModelDescriptor` (`Core/Transcription/ModelDescriptor.swift`). All models run fully locally. Two engines:
 
 - **WhisperKit** — the Whisper family in CoreML (the `argmaxinc/whisperkit-coreml` repository on Hugging Face), Neural Engine acceleration, 99 languages, translation to English, timestamps.
 - **FluidAudio** — Parakeet TDT (CoreML, `FluidInference/*` on Hugging Face), very fast (~110× real time on an M4 Pro).

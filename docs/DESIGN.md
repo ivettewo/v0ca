@@ -1,19 +1,21 @@
 # v0ca. — Design System
 
-Source: the mockups in `design/Design system for voice transcription app/` (three HTML files: the design system, the HUD, and the settings). This document is a distilled set of tokens for the SwiftUI implementation (`DesignSystem/`).
+Source: the mockups in `design/` — the design-system folder (design system, HUD, settings) plus the newer `Настройки · Новые экраны.dc.html` and `Онбординг · Финальные экраны.dc.html`. This document is a distilled set of tokens for the SwiftUI implementation (`DesignSystem/`).
 
 ## Fonts
 
-**System fonts only** — the bundle ships no font files at all. Google Sans was tried
-side by side with SF Pro and turned out to be indistinguishable in this UI, so both
+The bundle ships **Google Sans** (Regular / Medium / SemiBold) for all interface
+text and **Atkinson Hyperlegible Mono** (SemiBold) for the logo — both under the
+SIL OFL, license texts next to the TTFs in `Resources/Fonts/`. Both
 it and Google Sans Code were dropped (−5.7 MB).
 
 | Role | Font | Weights |
 |---|---|---|
-| Interface (all text) — `Tokens.sans()` | **SF Pro** (`.system`) | 400 / 500 / 600 |
-| Logo + everything monospaced (timers, hotkeys, file sizes, dates) — `Tokens.mono()` | **SF Mono** (`.system(design: .monospaced)`) | 400 / 500 / 600 |
+| Interface (all text) — `Tokens.sans()` | **Google Sans** (SF Pro fallback) | 400 / 500 / 600 |
+| Logo — `Tokens.logo()` | **Atkinson Hyperlegible Mono** (SF Mono fallback) | 600 |
+| Monospaced (timers, hotkeys, file sizes, dates) — `Tokens.mono()` | **SF Mono** (`.system(design: .monospaced)`) | 400 / 500 / 600 |
 
-The "v0ca." logo — SF Mono 600, the dot is always accent-red `#E03E3E`.
+The "v0ca." logo dot is always brand red `#E03E3E` (`Tokens.brand`) regardless of the user-selected accent; every other color token is a dynamic light/dark pair.
 
 ## Colors
 

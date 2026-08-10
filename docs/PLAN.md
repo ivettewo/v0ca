@@ -39,8 +39,8 @@ Stage outcome: the app can be used every day.
 ## Stage 4 — Polish
 
 - Finishing the HUD animations per the mockup, audio feedback.
-- Interface localization (Russian/English).
-- Onboarding, About, auto-updates (Sparkle), notarization and DMG.
+- Interface localization (Russian/English) — done.
+- Onboarding — done (full-window first-run wizard). Still ahead: About, auto-updates (Sparkle), notarization and DMG.
 
 ---
 
