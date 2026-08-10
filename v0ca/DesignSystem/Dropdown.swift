@@ -1,13 +1,16 @@
 import AppKit
 import SwiftUI
 
-/// Дропдаун по дизайн-системе (секция «ДРОПДАУН»): кнопка 36px с фокус-обводкой,
-/// раскрытый список — полностью кастомная плавающая панель (NSPanel), без системного
-/// оформления/стрелки: розовая подсветка выбранного пункта, красная галочка, hover.
+/// Дропдаун по макету «Настройки · Новые экраны»: кнопка-капсула 36px по ширине
+/// содержимого, раскрытый список — полностью кастомная плавающая панель (NSPanel)
+/// с розовой подсветкой выбранного пункта; выравнивается по правому краю кнопки.
 struct DesignDropdown<Value: Hashable>: View {
     let options: [(value: Value, label: String)]
     @Binding var selection: Value
+    /// Ширина раскрытого списка (кнопка — по содержимому).
     var width: CGFloat = 190
+    /// SF-символ слева от подписи (фильтр языков в каталоге моделей).
+    var icon: String?
 
     @State private var open = false
     @State private var anchor: NSView?
@@ -21,30 +24,35 @@ struct DesignDropdown<Value: Hashable>: View {
         Button {
             toggle()
         } label: {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
+                if let icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 13))
+                        .foregroundStyle(Tokens.text2)
+                }
                 Text(currentLabel)
                     .font(Tokens.sans(13))
                     .foregroundStyle(Tokens.text)
                     .lineLimit(1)
-                Spacer(minLength: 0)
                 Image(systemName: "chevron.down")
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(Tokens.text3)
             }
-            .padding(.horizontal, 12)
-            .frame(width: width, height: 36)
-            .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.radiusControl))
+            .padding(.leading, 16)
+            .padding(.trailing, 12)
+            .frame(height: 36)
+            .background(Tokens.surface, in: Capsule())
             .overlay(
-                RoundedRectangle(cornerRadius: Tokens.radiusControl)
-                    .stroke(open ? Tokens.accent : Tokens.border, lineWidth: 1)
+                Capsule()
+                    .stroke(open ? Tokens.accent : Tokens.controlBorder, lineWidth: 1)
             )
             // Фокус-обводка при открытии: box-shadow 0 0 0 3px #FCEBEB
             .background(
-                RoundedRectangle(cornerRadius: Tokens.radiusControl)
+                Capsule()
                     .fill(open ? Tokens.accentSoft : .clear)
                     .padding(-3)
             )
-            .contentShape(RoundedRectangle(cornerRadius: Tokens.radiusControl))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .pointerCursor()
@@ -72,8 +80,8 @@ struct DesignDropdown<Value: Hashable>: View {
     }
 }
 
-/// Раскрытый список: карточка радиусом 10 с рамкой и тенью, элементы 32px,
-/// выбранный — розовый фон #FCEBEB + текст #C93232 + галочка, остальные — hover.
+/// Раскрытый список: карточка радиусом 14 с мягкой рамкой, элементы 32px
+/// с радиусом 9, выбранный — розовый фон + красный текст + галочка, остальные — hover.
 private struct DropdownList<Value: Hashable>: View {
     let options: [(value: Value, label: String)]
     let selected: Value
@@ -103,10 +111,10 @@ private struct DropdownList<Value: Hashable>: View {
                     .frame(height: 32)
                     .frame(maxWidth: .infinity)
                     .background(
-                        RoundedRectangle(cornerRadius: 7)
+                        RoundedRectangle(cornerRadius: 9)
                             .fill(isSelected ? Tokens.accentSoft : .clear)
                     )
-                    .contentShape(RoundedRectangle(cornerRadius: 7))
+                    .contentShape(RoundedRectangle(cornerRadius: 9))
                 }
                 .buttonStyle(.plain)
                 .pointerCursor()
@@ -114,8 +122,8 @@ private struct DropdownList<Value: Hashable>: View {
         }
         .padding(5)
         .frame(width: width)
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Tokens.border, lineWidth: 1))
+        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Tokens.cardBorder, lineWidth: 1))
     }
 }
 
@@ -170,9 +178,10 @@ final class DropdownPanelController {
         panel.level = .popUpMenu
         panel.contentView = hosting
 
-        // Карточка выровнена под кнопкой: левый край совпадает, верх на 6px ниже.
+        // Карточка выровнена под кнопкой по правому краю (кнопка-капсула уже
+        // списка и прижата к правому краю строки), верх на 6px ниже.
         let origin = NSPoint(
-            x: anchor.minX - shadowPad,
+            x: anchor.maxX - size.width + shadowPad,
             y: anchor.minY - 6 - (size.height - shadowPad)
         )
         panel.setFrameOrigin(origin)

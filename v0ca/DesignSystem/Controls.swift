@@ -1,6 +1,7 @@
 import SwiftUI
 
-/// Тумблер по дизайну: трек 38×22, белая ручка 18px, ход 2→18px, анимация 0.18s.
+/// Тумблер по макету «Настройки · Новые экраны»: трек 44×26, белая ручка 20px
+/// с тенью, ход 3→21px, анимация 0.18s.
 struct AccentToggle: View {
     @Binding var isOn: Bool
     /// Выключённый тумблер не реагирует на клик и показан приглушённым.
@@ -15,13 +16,13 @@ struct AccentToggle: View {
         } label: {
             ZStack(alignment: .leading) {
                 Capsule()
-                    .fill(isOn ? Tokens.accent : Color(hex: 0xD3D3D8))
-                    .frame(width: 38, height: 22)
+                    .fill(isOn ? Tokens.accent : Tokens.cardBorder)
+                    .frame(width: 44, height: 26)
                 Circle()
-                    .fill(.white)
-                    .frame(width: 18, height: 18)
+                    .fill(Tokens.knob)
+                    .frame(width: 20, height: 20)
                     .shadow(color: .black.opacity(0.25), radius: 1.5, y: 1)
-                    .offset(x: isOn ? 18 : 2)
+                    .offset(x: isOn ? 21 : 3)
             }
             .opacity(enabled ? 1 : 0.45)
         }
@@ -31,20 +32,20 @@ struct AccentToggle: View {
     }
 }
 
-/// Переключатель-табы: серый трек, активный сегмент — белая «пилюля» с рамкой.
+/// Переключатель-табы: серая капсула-трек, активный сегмент — белая пилюля с тенью.
 /// Для выбора из 2–3 равнозначных вариантов, где дропдаун избыточен.
 struct DSSegmentedControl<Value: Hashable>: View {
     let options: [(value: Value, label: String)]
     @Binding var selection: Value
 
     var body: some View {
-        HStack(spacing: 3) {
+        HStack(spacing: 0) {
             ForEach(options, id: \.value) { option in
                 segment(option)
             }
         }
         .padding(3)
-        .background(Tokens.surface2, in: RoundedRectangle(cornerRadius: 9))
+        .background(Tokens.surface2, in: Capsule())
     }
 
     private func segment(_ option: (value: Value, label: String)) -> some View {
@@ -55,20 +56,21 @@ struct DSSegmentedControl<Value: Hashable>: View {
             }
         } label: {
             Text(option.label)
-                .font(Tokens.sans(12.5, weight: isSelected ? .medium : .regular))
-                .foregroundStyle(isSelected ? Tokens.text : Tokens.text2)
+                .font(Tokens.sans(13, weight: isSelected ? .medium : .regular))
+                .foregroundStyle(isSelected ? Tokens.text : Tokens.text3)
                 .lineLimit(1)
-                .padding(.horizontal, 14)
-                .frame(height: 26)
+                .padding(.horizontal, 16)
+                .frame(height: 30)
                 .background {
                     if isSelected {
-                        RoundedRectangle(cornerRadius: 7)
-                            .fill(Tokens.surface)
-                            .overlay(RoundedRectangle(cornerRadius: 7).stroke(Tokens.border, lineWidth: 1))
-                            .shadow(color: .black.opacity(0.06), radius: 1.5, y: 1)
+                        // raised: в тёмной теме активный сегмент светлее трека,
+                        // а не темнее (surface там темнее surface2).
+                        Capsule()
+                            .fill(Tokens.raised)
+                            .shadow(color: .black.opacity(0.14), radius: 1.5, y: 1)
                     }
                 }
-                .contentShape(RoundedRectangle(cornerRadius: 7))
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .pointerCursor()
@@ -83,7 +85,7 @@ struct DSRadio: View {
     var body: some View {
         Circle()
             .strokeBorder(
-                selected ? Tokens.accent : Color(hex: 0xC9C9CF),
+                selected ? Tokens.accent : Tokens.controlBorderHover,
                 lineWidth: selected ? 5.5 : 1.5
             )
             .frame(width: 18, height: 18)

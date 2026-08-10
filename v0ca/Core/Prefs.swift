@@ -18,6 +18,11 @@ enum Prefs {
         static let toggleRecordingUsesFn = "toggleRecordingUsesFn"
         /// Онбординг завершён (или пропущен): вкладка скрыта и при запуске не открывается.
         static let onboardingDone = "onboardingDone"
+        /// Тема оформления (секция «Оформление»). Пока только сохраняется —
+        /// тёмной темы в дизайн-системе ещё нет.
+        static let appTheme = "appTheme"
+        /// Акцентный цвет (hex без #). Пока только сохраняется — Tokens.accent статичен.
+        static let accentColor = "accentColor"
 
         // Ключи ниже читаются доменной логикой в своих модулях (AppLanguage,
         // RecognitionLanguage, ModelManager…) — здесь только строки, чтобы все
@@ -63,6 +68,20 @@ enum Prefs {
             case .twoWeeks: "Через 2 недели"
             case .threeMonths: "Через 3 месяца"
             case .off: "Никогда"
+            }
+        }
+    }
+
+    enum AppTheme: String, CaseIterable {
+        case light
+        case dark
+        case system
+
+        var label: String {
+            switch self {
+            case .light: "Светлая"
+            case .dark: "Тёмная"
+            case .system: "Системная"
             }
         }
     }

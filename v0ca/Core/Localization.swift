@@ -1,10 +1,11 @@
 import Foundation
 import Observation
 
-/// Язык интерфейса. По умолчанию английский; русский — базовый в коде (русские
-/// строки служат ключами), перевод берётся из `L10n.en`. Рантайм-переключение без
-/// перезапуска: класс `@Observable`, поэтому вызов `L()` в теле View делает его
-/// реактивным.
+/// Язык интерфейса. По умолчанию — язык системы (русская система → русский,
+/// иначе английский); выбор в настройках сохраняется и дальше главнее системы.
+/// Русский — базовый в коде (русские строки служат ключами), перевод берётся из
+/// `L10n.en`. Рантайм-переключение без перезапуска: класс `@Observable`, поэтому
+/// вызов `L()` в теле View делает его реактивным.
 @MainActor
 @Observable
 final class AppLanguage {
@@ -20,8 +21,15 @@ final class AppLanguage {
     }
 
     private init() {
-        let saved = UserDefaults.standard.string(forKey: Prefs.Key.interfaceLanguage) ?? Code.en.rawValue
-        code = Code(rawValue: saved) ?? .en
+        if let saved = UserDefaults.standard.string(forKey: Prefs.Key.interfaceLanguage),
+           let savedCode = Code(rawValue: saved) {
+            code = savedCode
+        } else {
+            // Первый запуск (язык ещё не выбирали): берём язык системы —
+            // русская система → русский интерфейс, любая другая → английский.
+            let system = Locale.preferredLanguages.first ?? "en"
+            code = system.hasPrefix("ru") ? .ru : .en
+        }
     }
 }
 
@@ -37,6 +45,7 @@ enum L10n {
     static let en: [String: String] = [
         // Сайдбар / вкладки
         "Настройки": "Settings",
+        "Диктовка": "Dictation",
         "Онбординг": "Onboarding",
         "Общие": "General",
         "Модели": "Models",
@@ -48,6 +57,7 @@ enum L10n {
         "Начать запись": "Start recording",
         "Остановить запись": "Stop recording",
         "Настройки…": "Settings…",
+        "Продолжить настройку…": "Continue setup…",
         "Выйти из v0ca": "Quit v0ca",
         "Загрузка модели…": "Loading model…",
 
@@ -56,6 +66,56 @@ enum L10n {
         "Подготовка…": "Preparing…",
         "Ошибка модели": "Model error",
         "Расшифровка…": "Transcribing…",
+
+        // Новый онбординг (окно-визард)
+        "Настройка v0ca": "Set up v0ca",
+        "Новый онбординг": "New onboarding",
+        "Локальная транскрибация голоса. Всё работает на вашем Mac — три шага, и можно диктовать.":
+            "Local voice transcription. Everything runs on your Mac — three steps and you can dictate.",
+        "Начать настройку": "Get started",
+        "Мощно и бесплатно": "Powerful and free",
+        "Все настройки открыты с первого дня — без подписки и лимитов.":
+            "Every setting is available from day one — no subscription, no limits.",
+        "Словарь": "Dictionary",
+        "Шорткаты": "Shortcuts",
+        "Назад": "Back",
+        "Дальше": "Next",
+        "Далее": "Next",
+        "Настроить позже": "Set up later",
+        "Запрос…": "Requesting…",
+        "Вставка готового текста в активное приложение":
+            "Inserting the finished text into the active app",
+        "Оба разрешения обязательны — без них приложение не сможет работать.":
+            "Both permissions are required — the app cannot work without them.",
+        "Модель на ваш выбор": "A model of your choice",
+        "Выбор из десятка моделей: быстрее, легче, точнее.":
+            "A dozen models to choose from: faster, lighter, more accurate.",
+        "Меняйте в любой момент.": "Switch anytime.",
+        "Баланс качества и скорости": "A balance of quality and speed",
+        "Максимальная точность на длинных записях": "Maximum accuracy on long recordings",
+        "Быстрая диктовка только на английском": "Fast English-only dictation",
+        "Мгновенные заметки на слабом железе": "Instant notes on modest hardware",
+        "Шумные записи и несколько говорящих": "Noisy recordings and multiple speakers",
+        "1 язык": "1 language",
+        "Скачайте локальную модель для распознавания речи — она работает на вашем устройстве.":
+            "Download a local speech recognition model — it runs on your device.",
+        "Показать все модели": "Show all models",
+        "Скрыть остальные модели": "Hide other models",
+        "Скачать позже": "Download later",
+        "Кастомные шорткаты": "Custom shortcuts",
+        "Выбирайте и устанавливайте любые клавиши, которые вам необходимы.":
+            "Pick and set any keys you need.",
+        "Работает поверх любого приложения": "Works on top of any app",
+        "Сбросить запись, ничего не вставляя": "Discard the recording without inserting anything",
+        "Запись идёт, пока клавиша записи удерживается": "Records while the recording key is held",
+        "Шорткаты можно поменять в приложении в любой момент.":
+            "You can change the shortcuts in the app at any time.",
+        "Завершить": "Finish",
+        "Всё готово": "All set",
+        "Можно пользоваться: нажмите установленную комбинацию в любом приложении — и начинайте говорить.":
+            "You're ready: press your combination in any app and start talking.",
+        "Спасибо, записал — присылай детали": "Thanks, noted — send over the details",
+        "Готово": "Done",
 
         // Онбординг
         "Быстрый старт": "Quick start",
@@ -100,6 +160,12 @@ enum L10n {
         "Положение индикатора записи": "Recording indicator position",
         "Отступ от края экрана": "Offset from the screen edge",
         "Выгружать модель": "Unload model",
+        "Оформление": "Appearance",
+        "Тема": "Theme",
+        "Светлая": "Light",
+        "Тёмная": "Dark",
+        "Системная": "System",
+        "Акцентный цвет": "Accent color",
         "Освобождать память, если модель не используется указанное время":
             "Free memory when the model is idle for the set time",
 
@@ -237,6 +303,15 @@ enum L10n {
         "Папка с записями": "Recordings folder",
         "Открыть в Finder": "Open in Finder",
         "ЗАПИСИ": "RECORDS",
+        "Сегодня": "Today",
+        "Слов расшифровано": "Words transcribed",
+        "Подряд": "Day streak",
+        "Слов в день в среднем": "Words per day on average",
+        "Вчера": "Yesterday",
+        "Старые записи удаляются, чтобы не занимать место":
+            "Old records are deleted to save space",
+        "Открыть": "Open",
+        "Воспроизвести": "Play",
         "Записей пока нет — продиктуйте что-нибудь.": "No records yet — dictate something.",
         "Скопировать": "Copy",
         "В избранное": "Favorite",
@@ -257,8 +332,8 @@ enum L10n {
             "Inserting the finished text into the active app (⌘V)",
         "Включите v0ca в списке — без этого текст остаётся только в буфере":
             "Enable v0ca in the list — otherwise the text stays in the clipboard only",
-        "v0ca работает полностью локально — разрешения нужны только для записи и вставки текста.":
-            "v0ca runs fully locally — permissions are only needed to record and insert text.",
+        "v0ca работает полностью локально. Разрешения нужны только для записи и вставки текста.":
+            "v0ca runs fully locally. Permissions are only needed to record and insert text.",
         "Разрешено": "Granted",
         "Разрешить": "Allow",
         "Открыть настройки": "Open Settings",

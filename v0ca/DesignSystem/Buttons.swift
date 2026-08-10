@@ -7,7 +7,8 @@ enum DSButtonVariant {
     case primary, secondary, ghost, dangerSoft, icon
 }
 
-/// Кнопка дизайн-системы: высота 36 (compact 28), радиус 8/7, живой hover.
+/// Кнопка дизайн-системы: высота 36 (compact 28), капсула («Настройки · Новые
+/// экраны» — все кнопки пилюли), живой hover.
 struct DSButton<Label: View>: View {
     var variant: DSButtonVariant = .secondary
     var compact: Bool = false
@@ -17,7 +18,7 @@ struct DSButton<Label: View>: View {
     @State private var hovering = false
 
     private var height: CGFloat { variant == .icon ? 36 : (compact ? 28 : 36) }
-    private var radius: CGFloat { compact ? 7 : 8 }
+    private var radius: CGFloat { height / 2 }
 
     var body: some View {
         Button(action: action) {
@@ -52,7 +53,7 @@ struct DSButton<Label: View>: View {
 
     private var foreground: Color {
         switch variant {
-        case .primary: .white
+        case .primary: Tokens.textOnAccent
         case .secondary: Tokens.text
         case .icon: hovering ? Tokens.text : Tokens.text2
         case .ghost: hovering ? Tokens.text : Tokens.text2
@@ -60,7 +61,7 @@ struct DSButton<Label: View>: View {
         }
     }
 
-    private var borderColor: Color { hovering ? Tokens.text3.opacity(0.5) : Tokens.border }
+    private var borderColor: Color { hovering ? Tokens.controlBorderHover : Tokens.controlBorder }
 }
 
 extension DSButton where Label == Text {
