@@ -71,7 +71,7 @@ struct SoundTab: View {
             fraction: CGFloat(min(tester.level, 1)),
             height: 6,
             fill: AnyShapeStyle(LinearGradient(
-                colors: [Tokens.success, Color(hex: 0xB4C94A), Tokens.processing],
+                colors: [Tokens.success, Tokens.levelMid, Tokens.processing],
                 startPoint: .leading,
                 endPoint: .trailing
             ))

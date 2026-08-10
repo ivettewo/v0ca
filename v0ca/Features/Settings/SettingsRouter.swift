@@ -4,5 +4,5 @@ import Observation
 @MainActor
 @Observable
 final class SettingsRouter {
-    var tab: SettingsRootView.Tab = .general
+    var tab: SettingsRootView.Tab = .dictation
 }

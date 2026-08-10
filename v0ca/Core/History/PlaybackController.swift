@@ -7,6 +7,9 @@ import Observation
 final class PlaybackController {
     private(set) var playingID: UUID?
     private(set) var progress: Double = 0 // 0…1
+    /// Пауза — отдельное наблюдаемое поле: `player.isPlaying` вью не отслеживают,
+    /// и иконка play/pause не обновлялась при паузе/возобновлении.
+    private(set) var paused = false
 
     @ObservationIgnored private var player: AVAudioPlayer?
     @ObservationIgnored private var timer: Timer?
@@ -15,8 +18,10 @@ final class PlaybackController {
         if playingID == id, let player {
             if player.isPlaying {
                 player.pause()
+                paused = true
             } else {
                 player.play()
+                paused = false
             }
             return
         }
@@ -24,6 +29,7 @@ final class PlaybackController {
         guard let newPlayer = try? AVAudioPlayer(contentsOf: url) else { return }
         player = newPlayer
         playingID = id
+        paused = false
         newPlayer.play()
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             Task { @MainActor [weak self] in
@@ -33,7 +39,7 @@ final class PlaybackController {
     }
 
     func isPlaying(_ id: UUID) -> Bool {
-        playingID == id && player?.isPlaying == true
+        playingID == id && !paused
     }
 
     func stop() {
@@ -42,6 +48,7 @@ final class PlaybackController {
         timer?.invalidate()
         timer = nil
         playingID = nil
+        paused = false
         progress = 0
     }
 

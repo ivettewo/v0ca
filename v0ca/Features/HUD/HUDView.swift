@@ -56,7 +56,7 @@ struct HUDView: View {
         .background(Tokens.surface, in: Capsule())
         .overlay(Capsule().strokeBorder(Tokens.border, lineWidth: 1))
         .clipShape(Capsule())
-        .shadow(color: Color(hex: 0x182030).opacity(0.10), radius: 14, y: 6)
+        .shadow(color: Tokens.shadowHUD.opacity(0.10), radius: 14, y: 6)
         .scaleEffect(phase == .hidden ? 0.55 : 1)
         .opacity(phase == .hidden ? 0 : 1)
         // Появление и исчезновение — короче морфа ширины, иначе непонятно,
@@ -190,7 +190,7 @@ struct HUDView: View {
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(Tokens.text2)
                 .frame(width: 28, height: 28)
-                .background(Color(hex: 0xECECEF), in: Circle())
+                .background(Tokens.surface2, in: Circle())
         }
         .buttonStyle(.plain)
         .pointerCursor()

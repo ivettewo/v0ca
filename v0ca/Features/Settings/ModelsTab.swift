@@ -1,14 +1,16 @@
 import AppKit
 import SwiftUI
 
-/// Каталог моделей — точно по макету «Экран · Настройки», вкладка Models:
-/// плоский список, активная карточка залита accentBg, радио-кружок слева,
-/// прогрессбары точности/скорости, текстовые кнопки «Удалить»/«Скачать».
+/// Каталог моделей по макету «Настройки · Новые экраны», вкладка 02:
+/// закреплённая шапка (поиск + фильтр языков + кнопка папки), сверху карточками —
+/// загруженные и рекомендуемые модели, остальные — под разворачиваемым списком.
+/// Чипов и текстовых кнопок больше нет: скачать/удалить/отменить — круглые иконки.
 struct ModelsTab: View {
     let models: ModelManager
 
     @State private var searchText = ""
     @State private var languageFilter: LanguageFilter = .all
+    @State private var showAll = false
     @FocusState private var searchFocused: Bool
 
     enum LanguageFilter: String, CaseIterable {
@@ -17,7 +19,25 @@ struct ModelsTab: View {
         case englishOnly = "Только английский"
     }
 
+
     var body: some View {
+        LazyVStack(alignment: .leading, spacing: 14, pinnedViews: [.sectionHeaders]) {
+            Section {
+                catalog
+            } header: {
+                headerBar
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .dismissFieldFocus)) { _ in
+            searchFocused = false
+        }
+    }
+
+    // MARK: - Закреплённая шапка
+
+    /// Липнет к верху при скролле; белая подложка растянута на паддинги панели,
+    /// чтобы карточки не просвечивали под контролами.
+    private var headerBar: some View {
         HStack(spacing: 10) {
             searchField
             DesignDropdown(
@@ -25,63 +45,104 @@ struct ModelsTab: View {
                 selection: $languageFilter,
                 width: 180
             )
-            openFolderButton
+            folderButton
         }
-        .onReceive(NotificationCenter.default.publisher(for: .dismissFieldFocus)) { _ in
-            searchFocused = false
+        .padding(.bottom, 12)
+        .background(
+            Tokens.surface
+                .padding(.horizontal, -24)
+                .padding(.top, -24)
+        )
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 13))
+                .foregroundStyle(Tokens.text3)
+            TextField(L("Поиск модели"), text: $searchText)
+                .textFieldStyle(.plain)
+                .font(Tokens.sans(13))
+                .focused($searchFocused)
         }
+        .padding(.leading, 13)
+        .padding(.trailing, 14)
+        .frame(height: 36)
+        .frame(maxWidth: .infinity)
+        .background(Tokens.surface, in: Capsule())
+        .overlay(
+            Capsule().stroke(searchFocused ? Tokens.accent : Tokens.controlBorder, lineWidth: 1)
+        )
+        // Фокус-ринг как у полей дизайн-системы.
+        .background(Capsule().fill(searchFocused ? Tokens.accentSoft : .clear).padding(-3))
+        .textCursor()
+        .unfocusOnOutsideClick($searchFocused)
+    }
 
-        let downloaded = filtered.filter { models.itemStates[$0.id] == .downloaded }
-        let notDownloaded = filtered.filter { models.itemStates[$0.id] != .downloaded }
-        // Рекомендованные всплывают отдельной секцией, пока не скачаны; после
-        // загрузки они уходят в «Загруженные» и повторно тут не показываются.
-        let recommended = notDownloaded.filter(\.recommended)
-        let available = notDownloaded.filter { !$0.recommended }
+    /// Открыть папку с моделями в Finder — оттуда видно все скачанные модели и
+    /// можно удалить нужные вручную. В макете иконки нет — рисуем в кружочке.
+    private var folderButton: some View {
+        CircleIconButton(symbol: "folder", help: L("Открыть папку моделей в Finder")) {
+            let folder = HFModelDownloader.repoFolder
+            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            NSWorkspace.shared.open(folder)
+        }
+    }
 
-        VStack(alignment: .leading, spacing: 0) {
-            if !downloaded.isEmpty {
-                section(L("ЗАГРУЖЕННЫЕ"), models: downloaded, downloaded: true, first: true)
+    // MARK: - Каталог
+
+    /// Поиск или фильтр активны — раскрываем весь список, сворачивалка не работает.
+    private var filterActive: Bool {
+        !searchText.isEmpty || languageFilter != .all
+    }
+
+    private func isDownloaded(_ model: ModelDescriptor) -> Bool {
+        models.itemStates[model.id] == .downloaded
+    }
+
+    @ViewBuilder
+    private var catalog: some View {
+        let downloaded = filtered.filter { isDownloaded($0) }
+        let recommended = filtered.filter { $0.recommended && !isDownloaded($0) }
+        let rest = filtered.filter { !$0.recommended && !isDownloaded($0) }
+
+        if filtered.isEmpty {
+            Text(L("Ничего не найдено"))
+                .font(Tokens.sans(12))
+                .foregroundStyle(Tokens.text3)
+        } else {
+            VStack(spacing: 12) {
+                ForEach(downloaded + recommended) { model in
+                    card(model)
+                }
             }
-            if !recommended.isEmpty {
-                section(L("РЕКОМЕНДУЕМ"), models: recommended, downloaded: false, first: downloaded.isEmpty)
-            }
-            if !available.isEmpty {
-                section(
-                    L("ДОСТУПНЫ ДЛЯ ЗАГРУЗКИ"),
-                    models: available,
-                    downloaded: false,
-                    first: downloaded.isEmpty && recommended.isEmpty
-                )
-            }
-            if filtered.isEmpty {
-                Text(L("Ничего не найдено"))
-                    .font(Tokens.sans(12))
-                    .foregroundStyle(Tokens.text3)
+
+            if !rest.isEmpty {
+                if !filterActive {
+                    toggleAllButton
+                }
+                if showAll || filterActive {
+                    restList(rest)
+                }
             }
         }
     }
 
-    /// Секция каталога: капс-заголовок и карточки. `first` убирает верхний отступ
-    /// у самой первой секции на экране, какой бы она ни оказалась.
-    @ViewBuilder
-    private func section(
-        _ title: String,
-        models list: [ModelDescriptor],
-        downloaded: Bool,
-        first: Bool
-    ) -> some View {
-        SectionLabel(title)
-            .padding(.top, first ? 0 : 22)
-            .padding(.bottom, 8)
-        ForEach(Array(list.enumerated()), id: \.element.id) { index, model in
-            ModelCard(model: model, models: models, downloaded: downloaded)
-                .overlay(alignment: .top) {
-                    // Разделители только между карточками, не перед первой.
-                    if index > 0, !downloaded {
-                        Divider().overlay(Tokens.surface2)
-                    }
-                }
+    private var toggleAllButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.18)) { showAll.toggle() }
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 11, weight: .semibold))
+                    .rotationEffect(.degrees(showAll ? 180 : 0))
+                Text(showAll ? L("Скрыть остальные модели") : L("Показать все модели"))
+                    .font(Tokens.sans(13, weight: .medium))
+            }
+            .foregroundStyle(Tokens.text2)
         }
+        .buttonStyle(.plain)
+        .pointerCursor()
     }
 
     private var filtered: [ModelDescriptor] {
@@ -97,230 +158,209 @@ struct ModelsTab: View {
         }
     }
 
-    /// Открыть папку с моделями в Finder — оттуда видно все скачанные модели и
-    /// можно удалить нужные вручную.
-    private var openFolderButton: some View {
-        DSButton(variant: .icon) {
-            let folder = HFModelDownloader.repoFolder
-            try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-            NSWorkspace.shared.open(folder)
-        } label: {
-            Image(systemName: "folder").font(.system(size: 13))
+    // MARK: - Карточки
+
+    /// Отдельная карточка (загруженные и рекомендуемые). Активная — акцентная
+    /// рамка 1.5; клик по загруженной делает её активной.
+    private func card(_ model: ModelDescriptor) -> some View {
+        let state = models.itemStates[model.id] ?? .notDownloaded
+        let isActive = models.activeModelID == model.id && state == .downloaded
+        return VStack(spacing: 0) {
+            row(model, state: state, nameSize: 15)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 18)
+            downloadStripSlot(model, state: state, cornerRadius: 18)
         }
-        .help(L("Открыть папку моделей в Finder"))
-    }
-
-    private var searchField: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 12))
-                .foregroundStyle(Tokens.text3)
-            TextField(L("Поиск модели"), text: $searchText)
-                .textFieldStyle(.plain)
-                .font(Tokens.sans(13))
-                .focused($searchFocused)
-        }
-        .padding(.horizontal, 10)
-        .frame(height: 36)
-        .dsFieldStyle(focused: searchFocused, fill: searchFocused ? Tokens.surface : Tokens.background)
-    }
-}
-
-/// Карточка модели по макету. Вся карточка кликабельна — выбирает активную.
-private struct ModelCard: View {
-    let model: ModelDescriptor
-    let models: ModelManager
-    let downloaded: Bool
-
-    // Цвета активной карточки из макета
-    private static let accentBg = Color(hex: 0xFCEBEB)
-    private static let descActive = Color(hex: 0xB96A6A)
-    private static let metaActive = Color(hex: 0xC97878)
-    private static let strong = Color(hex: 0x4A4A52)
-    private static let trackActive = Color(hex: 0xF0C6C6)
-    private static let faint = Color(hex: 0xC9C9CF)
-    private static let downloadingText = Color(hex: 0xA9722A)
-
-    private var isActive: Bool { models.activeModelID == model.id }
-
-    /// Подпись фазы подготовки активной модели (пока не .ready).
-    private var preparingLabel: String {
-        switch models.loadState {
-        case .downloading(let percent): "\(L("Загрузка")) \(percent)%"
-        case .loading: L("Подготовка…")
-        case .failed: L("Ошибка")
-        case .idle, .ready: L("Подготовка…")
-        }
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            leadingIcon
-            content
-            bars
-            action
-        }
-        .padding(16)
-        .background(
-            isActive ? Self.accentBg : .clear,
-            in: RoundedRectangle(cornerRadius: 10)
+        .background(Tokens.surfaceSoft, in: RoundedRectangle(cornerRadius: 18))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18)
+                .stroke(isActive ? Tokens.accent : Tokens.cardBorder, lineWidth: isActive ? 1.5 : 1)
         )
-        .contentShape(Rectangle())
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .animation(.easeInOut(duration: 0.25), value: state)
+        .contentShape(RoundedRectangle(cornerRadius: 18))
         .onTapGesture {
-            if downloaded, !isActive {
+            if state == .downloaded, !isActive {
                 models.setActive(model.id)
             }
         }
-        .pointerCursor(active: downloaded && !isActive)
+        .pointerCursor(active: state == .downloaded && !isActive)
     }
 
-    // MARK: - Левая иконка
-
-    @ViewBuilder
-    private var leadingIcon: some View {
-        if downloaded {
-            DSRadio(selected: isActive)
-                .padding(.top, 2)
-        } else {
-            Image(systemName: "arrow.down.to.line")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Self.faint)
-                .frame(width: 18, height: 18)
-                .padding(.top, 2)
+    /// Свёрнутый список «остальных»: единый контейнер, строки через разделители.
+    private func restList(_ list: [ModelDescriptor]) -> some View {
+        VStack(spacing: 0) {
+            ForEach(Array(list.enumerated()), id: \.element.id) { index, model in
+                let state = models.itemStates[model.id] ?? .notDownloaded
+                if index > 0 {
+                    RowDivider()
+                        .padding(.horizontal, 20)
+                }
+                row(model, state: state, nameSize: 14)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+                downloadStripSlot(model, state: state, cornerRadius: index == list.count - 1 ? 18 : 0)
+            }
         }
+        .background(Tokens.surfaceSoft, in: RoundedRectangle(cornerRadius: 18))
+        .overlay(RoundedRectangle(cornerRadius: 18).stroke(Tokens.cardBorder, lineWidth: 1))
+        .clipShape(RoundedRectangle(cornerRadius: 18))
+        .animation(.easeInOut(duration: 0.25), value: models.itemStates)
     }
 
-    // MARK: - Текстовая колонка
-
-    private var content: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Text(model.name)
-                    .font(Tokens.sans(14, weight: .medium))
-                    .foregroundStyle(isActive ? Tokens.accentHover : Tokens.text)
-                if isActive {
-                    if models.loadState == .ready {
-                        DSChip(L("Активная"), background: Tokens.surface, foreground: Tokens.accentHover)
-                    } else {
-                        // Модель выбрана, но ещё грузится/греется — показываем это,
-                        // чтобы было понятно, почему первая диктовка ждёт «Подготовку».
-                        HStack(spacing: 5) {
-                            ProgressView()
-                                .controlSize(.small)
-                                .scaleEffect(0.7)
-                                .frame(width: 12, height: 12)
-                            Text(preparingLabel)
-                                .font(Tokens.sans(11, weight: .medium))
-                                .foregroundStyle(Tokens.accentHover)
-                        }
+    private func row(_ model: ModelDescriptor, state: ModelManager.ItemState, nameSize: CGFloat) -> some View {
+        let isActive = models.activeModelID == model.id && state == .downloaded
+        return HStack(spacing: 18) {
+            VStack(alignment: .leading, spacing: 3) {
+                HStack(spacing: 8) {
+                    Text(model.name)
+                        .font(Tokens.sans(nameSize, weight: .medium))
+                        .foregroundStyle(Tokens.text)
+                    if isActive, models.loadState != .ready {
+                        preparingIndicator
                     }
                 }
-                if model.recommended {
-                    DSChip(
-                        L("Рекомендуем"),
-                        background: isActive ? Color.white.opacity(0.55) : Tokens.surface2,
-                        foreground: isActive ? Tokens.accentHover : Tokens.text2
-                    )
+                Text(L(model.details))
+                    .font(Tokens.sans(12.5))
+                    .foregroundStyle(Tokens.text2)
+                    .lineLimit(2)
+                HStack(spacing: 16) {
+                    metaLabel("globe", L(model.languages.label), mono: false)
+                    metaLabel("externaldrive", model.sizeLabel, mono: true)
                 }
-                if model.languages == .englishOnly {
-                    DSChip(L("Только английский"), background: Tokens.surface2, foreground: Tokens.text2)
-                }
+                .padding(.top, 5)
             }
-
-            Text(L(model.details))
-                .font(Tokens.sans(13))
-                .lineSpacing(3)
-                .foregroundStyle(isActive ? Self.descActive : Tokens.text2)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: 340, alignment: .leading)
-
-            HStack(spacing: 18) {
-                HStack(spacing: 6) {
-                    Image(systemName: "globe")
-                        .font(.system(size: 11))
-                        .opacity(0.75)
-                    Text(L(model.languages.label))
-                        .font(Tokens.sans(12, weight: .semibold))
-                }
-                HStack(spacing: 6) {
-                    Image(systemName: "cylinder.split.1x2")
-                        .font(.system(size: 11))
-                        .opacity(0.75)
-                    Text(model.sizeLabel)
-                        .font(Tokens.mono(12, weight: .semibold))
-                }
-            }
-            .foregroundStyle(isActive ? Tokens.accentHover : Self.strong)
+            Spacer(minLength: 0)
+            bars(model)
+            control(model, state: state)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - Прогрессбары точность/скорость
+    /// Модель выбрана, но ещё грузится/греется — почему первая диктовка ждёт.
+    private var preparingIndicator: some View {
+        HStack(spacing: 5) {
+            ProgressView()
+                .controlSize(.small)
+                .scaleEffect(0.7)
+                .frame(width: 12, height: 12)
+            Text(preparingLabel)
+                .font(Tokens.sans(11, weight: .medium))
+                .foregroundStyle(Tokens.accentHover)
+        }
+    }
 
-    private var bars: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            barRow(L("Точность"), value: model.accuracy)
-            barRow(L("Скорость"), value: model.speed)
+    private var preparingLabel: String {
+        switch models.loadState {
+        case .downloading(let percent): "\(L("Загрузка")) \(percent)%"
+        case .failed: L("Ошибка")
+        case .idle, .loading, .ready: L("Подготовка…")
+        }
+    }
+
+    private func metaLabel(_ symbol: String, _ text: String, mono: Bool) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: symbol)
+                .font(.system(size: 12))
+                .opacity(0.75)
+            Text(text)
+                .font(mono ? Tokens.mono(12, weight: .semibold) : Tokens.sans(12, weight: .semibold))
+        }
+        .foregroundStyle(Tokens.textMeta)
+    }
+
+    /// Полоски «Точность» / «Скорость» (шкала каталога 1–10).
+    private func bars(_ model: ModelDescriptor) -> some View {
+        VStack(spacing: 8) {
+            bar(L("Точность"), value: model.accuracy)
+            bar(L("Скорость"), value: model.speed)
         }
         .frame(width: 140)
-        .padding(.top, 2)
     }
 
-    private func barRow(_ label: String, value: Int) -> some View {
+    private func bar(_ label: String, value: Int) -> some View {
         HStack(spacing: 8) {
             Text(label)
                 .font(Tokens.sans(11))
-                .foregroundStyle(isActive ? Self.metaActive : Tokens.text3)
-                .frame(width: 58, alignment: .leading)
-            DSProgressBar(
-                fraction: CGFloat(value) / 10,
-                track: isActive ? Self.trackActive : Tokens.surface2,
-                fill: AnyShapeStyle(isActive ? Tokens.accent : Tokens.text)
-            )
+                .foregroundStyle(Tokens.text3)
+                .frame(width: 54, alignment: .leading)
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Tokens.surface2)
+                    Capsule().fill(Tokens.text)
+                        .frame(width: geo.size.width * CGFloat(value) / 10)
+                }
+            }
+            .frame(height: 5)
         }
     }
 
-    // MARK: - Кнопка действия
+    // MARK: - Действия
 
     @ViewBuilder
-    private var action: some View {
-        Group {
-            if downloaded {
-                DSButton(L("Удалить"), variant: .dangerSoft, compact: true) {
-                    confirmAndDelete()
-                }
-            } else if case .downloading(let percent) = models.itemStates[model.id] {
-                HStack(spacing: 6) {
-                    Text("\(percent)%")
-                        .font(Tokens.mono(12, weight: .medium))
-                        .foregroundStyle(Self.downloadingText)
-                    Button {
-                        models.cancelDownload(model.id)
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 9, weight: .bold))
-                            .foregroundStyle(Tokens.text2)
-                            .frame(width: 20, height: 20)
-                            .background(Tokens.surface2, in: Circle())
-                    }
-                    .buttonStyle(.plain)
-                    .pointerCursor()
-                    .help(L("Отменить загрузку"))
-                }
-                .frame(height: 28)
-            } else {
-                DSButton(L("Скачать"), variant: .secondary, compact: true) {
-                    models.download(model.id)
+    private func control(_ model: ModelDescriptor, state: ModelManager.ItemState) -> some View {
+        switch state {
+        case .downloaded:
+            CircleIconButton(
+                symbol: "trash",
+                help: L("Удалить"),
+                hoverAccent: true
+            ) {
+                confirmAndDelete(model)
+            }
+        case .downloading:
+            CircleIconButton(symbol: "xmark", help: L("Отменить загрузку")) {
+                models.cancelDownload(model.id)
+            }
+        case .notDownloaded:
+            DownloadCircleButton { models.download(model.id) }
+        }
+    }
+
+    /// Слот красной полосы прогресса под строкой: высота анимируется 0 ↔ полная,
+    /// появление и скрытие симметричны (паттерн с экрана моделей онбординга).
+    @ViewBuilder
+    private func downloadStripSlot(_ model: ModelDescriptor, state: ModelManager.ItemState, cornerRadius: CGFloat) -> some View {
+        let percent: Int? = if case .downloading(let p) = state { p } else { nil }
+        downloadStrip(model, percent: percent ?? 0, cornerRadius: cornerRadius)
+            .frame(height: percent == nil ? 0 : nil, alignment: .top)
+            .clipped()
+    }
+
+    private func downloadStrip(_ model: ModelDescriptor, percent: Int, cornerRadius: CGFloat) -> some View {
+        let doneMB = model.sizeMB * percent / 100
+        return HStack(spacing: 14) {
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Tokens.surface.opacity(0.3))
+                    Capsule().fill(Tokens.surface)
+                        .frame(width: geo.size.width * CGFloat(percent) / 100)
                 }
             }
+            .frame(height: 6)
+            HStack(spacing: 0) {
+                Text("\(doneMB)")
+                    .font(Tokens.sans(12.5, weight: .semibold))
+                    .foregroundStyle(Tokens.textOnAccent)
+                Text(" / \(model.sizeLabel)")
+                    .font(Tokens.sans(12.5))
+                    .foregroundStyle(Tokens.textOnAccent.opacity(0.85))
+            }
         }
-        .frame(width: 82, alignment: .center)
-        .padding(.top, 1)
+        .padding(.horizontal, 20)
+        .padding(.vertical, 13)
+        .frame(maxWidth: .infinity)
+        .background(
+            UnevenRoundedRectangle(
+                bottomLeadingRadius: cornerRadius,
+                bottomTrailingRadius: cornerRadius
+            )
+            .fill(Tokens.accent)
+        )
     }
 
     /// Нативное подтверждение удаления модели (NSAlert) — чтобы случайно не стереть
     /// большую скачанную модель.
-    private func confirmAndDelete() {
+    private func confirmAndDelete(_ model: ModelDescriptor) {
         let alert = NSAlert()
         alert.messageText = L("Удалить модель «%@»?", model.name)
         alert.informativeText = L(
@@ -330,12 +370,67 @@ private struct ModelCard: View {
         alert.alertStyle = .warning
         alert.addButton(withTitle: L("Удалить"))
         alert.addButton(withTitle: L("Отмена"))
-        // Кнопка «Удалить» — деструктивная (красная), где поддерживается.
-        if #available(macOS 11.0, *) {
-            alert.buttons.first?.hasDestructiveAction = true
-        }
+        alert.buttons.first?.hasDestructiveAction = true
         if alert.runModal() == .alertFirstButtonReturn {
             models.delete(model.id)
         }
+    }
+}
+
+// MARK: - Круглые кнопки
+
+/// Круглая кнопка-иконка 36×36 с рамкой; `hoverAccent` — на ховере розовеет
+/// и краснеет (корзина из макета).
+private struct CircleIconButton: View {
+    let symbol: String
+    let help: String
+    var hoverAccent: Bool = false
+    let action: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(hovering && hoverAccent ? Tokens.accentHover : Tokens.text2)
+                .frame(width: 36, height: 36)
+                .background(
+                    hovering ? (hoverAccent ? Tokens.accentSoft : Tokens.background) : Tokens.surface,
+                    in: Circle()
+                )
+                .overlay(
+                    Circle().stroke(
+                        hovering && hoverAccent ? Tokens.accentSoftHover : Tokens.controlBorder,
+                        lineWidth: 1
+                    )
+                )
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .pointerCursor()
+        .onHover { hovering = $0 }
+        .help(help)
+    }
+}
+
+/// Круглая красная кнопка скачивания 36×36.
+private struct DownloadCircleButton: View {
+    let action: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "arrow.down.to.line")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Tokens.textOnAccent)
+                .frame(width: 36, height: 36)
+                .background(hovering ? Tokens.accentHover : Tokens.accent, in: Circle())
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .pointerCursor()
+        .onHover { hovering = $0 }
+        .help(L("Скачать"))
     }
 }

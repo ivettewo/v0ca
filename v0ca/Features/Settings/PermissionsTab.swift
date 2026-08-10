@@ -29,13 +29,19 @@ struct PermissionsTab: View {
             }
         }
 
-        Text(L("v0ca работает полностью локально — разрешения нужны только для записи и вставки текста."))
-            .font(Tokens.sans(11.5))
-            .foregroundStyle(Tokens.text3)
-            .onReceive(timer) { _ in
-                micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
-                axGranted = AXIsProcessTrusted()
-            }
+        // Описание под секцией — из макета «Настройки · Новые экраны», 05.
+        VStack(alignment: .leading, spacing: 6) {
+            Text(L("Оба разрешения обязательны — без них приложение не сможет работать."))
+            Text(L("v0ca работает полностью локально. Разрешения нужны только для записи и вставки текста."))
+                .frame(maxWidth: 440, alignment: .leading)
+        }
+        .font(Tokens.sans(12.5))
+        .foregroundStyle(Tokens.text3)
+        .lineSpacing(4)
+        .onReceive(timer) { _ in
+            micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
+            axGranted = AXIsProcessTrusted()
+        }
     }
 
     // MARK: - Микрофон

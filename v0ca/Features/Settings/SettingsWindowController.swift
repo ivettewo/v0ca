@@ -8,6 +8,8 @@ final class SettingsWindowController {
     private var window: NSWindow?
     private let coordinator: RecordingCoordinator
     private let router = SettingsRouter()
+    /// Открыть окно нового онбординга — назначается в AppDelegate до первого show().
+    var openOnboarding: () -> Void = {}
 
     init(coordinator: RecordingCoordinator) {
         self.coordinator = coordinator
@@ -19,7 +21,7 @@ final class SettingsWindowController {
         }
         if window == nil {
             let window = NSWindow(
-                contentRect: NSRect(x: 0, y: 0, width: 920, height: 640),
+                contentRect: NSRect(x: 0, y: 0, width: 960, height: 640),
                 styleMask: [.titled, .closable, .miniaturizable, .fullSizeContentView],
                 backing: .buffered,
                 defer: false
@@ -28,8 +30,15 @@ final class SettingsWindowController {
             window.titleVisibility = .hidden
             window.titlebarAppearsTransparent = true
             window.isReleasedWhenClosed = false
-            window.backgroundColor = NSColor(srgbRed: 0xF6 / 255.0, green: 0xF6 / 255.0, blue: 0xF7 / 255.0, alpha: 1)
-            window.contentView = NSHostingView(rootView: SettingsRootView(coordinator: coordinator, router: router))
+            window.backgroundColor = NSColor(Tokens.background)
+            window.contentView = NSHostingView(rootView: SettingsRootView(
+                coordinator: coordinator,
+                openOnboarding: openOnboarding,
+                router: router
+            ))
+            // При .fullSizeContentView контент-вью занимает весь фрейм окна —
+            // задаём итоговые 960×640 фреймом (как у окна онбординга).
+            window.setFrame(NSRect(x: 0, y: 0, width: 960, height: 640), display: false)
             window.center()
             self.window = window
         }

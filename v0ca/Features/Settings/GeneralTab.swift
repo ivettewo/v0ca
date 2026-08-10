@@ -17,6 +17,14 @@ struct GeneralTab: View {
     @AppStorage(Prefs.Key.hudOffset) private var hudOffset: String = Prefs.HUDOffset.low.rawValue
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @Bindable private var language = AppLanguage.shared
+    @AppStorage(Prefs.Key.appTheme) private var appTheme: String = Prefs.AppTheme.light.rawValue
+    /// Акцент — через AccentStore: перекрашивает интерфейс сразу.
+    @State private var accentStore = AccentStore.shared
+
+    /// Палитра акцентов: пять из макета + изумрудный и голубой.
+    private static let accentOptions = [
+        "E03E3E", "D9823E", "5FA173", "3AA68B", "55A9CE", "5B84C0", "9C74C4",
+    ]
 
     /// Перевод умеет только мультиязычный Whisper — иначе тумблер неактивен.
     private var canTranslate: Bool {
@@ -156,5 +164,44 @@ struct GeneralTab: View {
                 )
             }
         }
+
+        SettingsSection(title: L("Оформление")) {
+            SettingRow(title: L("Тема")) {
+                DSSegmentedControl(
+                    options: Prefs.AppTheme.allCases.map { (value: $0.rawValue, label: L($0.label)) },
+                    selection: $appTheme
+                )
+                .onChange(of: appTheme) { Theme.apply() }
+            }
+            RowDivider()
+            SettingRow(title: L("Акцентный цвет")) {
+                HStack(spacing: 12) {
+                    ForEach(Self.accentOptions, id: \.self) { hex in
+                        accentDot(hex)
+                    }
+                }
+            }
+        }
+    }
+
+    /// Кружок акцента 22px; выбранный — белый зазор и внешнее цветное кольцо.
+    private func accentDot(_ hex: String) -> some View {
+        let color = Color(hex: UInt32(hex, radix: 16) ?? 0xE03E3E)
+        return Button {
+            accentStore.hex = hex
+        } label: {
+            Circle()
+                .fill(color)
+                .frame(width: 22, height: 22)
+                .overlay {
+                    if accentStore.hex == hex {
+                        Circle().stroke(Tokens.surface, lineWidth: 2).padding(-1)
+                        Circle().stroke(color, lineWidth: 1.5).padding(-2.75)
+                    }
+                }
+                .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .pointerCursor()
     }
 }

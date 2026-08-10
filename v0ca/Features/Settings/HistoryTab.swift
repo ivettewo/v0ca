@@ -1,45 +1,68 @@
 import AppKit
 import SwiftUI
 
-/// Вкладка «История» — по макету: плоские строки настроек + карточки записей
-/// с датой моно, действиями, текстом и плеером.
+/// Вкладка «История» по макету «Настройки · Новые экраны», вкладка 04:
+/// сверху карточка настроек (автоудаление + папка), ниже записи, сгруппированные
+/// по дням (Сегодня / Вчера / дата) в табличном виде: время слева, текст,
+/// действия справа — появляются только при наведении на строку. Воспроизведение
+/// без прогресс-бара: клик по play сразу играет запись.
 struct HistoryTab: View {
     let coordinator: RecordingCoordinator
 
     @AppStorage(Prefs.Key.historyLimit) private var historyLimit: Int = 200
     @AppStorage(Prefs.Key.historyAutoDelete) private var autoDelete: String = Prefs.HistoryAutoDelete.twoWeeks.rawValue
+    @FocusState private var sizeFocused: Bool
 
     @State private var playback = PlaybackController()
-    @State private var retranscribingID: UUID?
-    @FocusState private var sizeFocused: Bool
 
     private var store: HistoryStore { coordinator.history }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            SectionLabel(L("НАСТРОЙКИ"))
-                .padding(.bottom, 4)
+        // LazyVStack: при большой истории строятся только видимые карточки дней,
+        // иначе сотня строк лейаутится разом и скролл лагает.
+        LazyVStack(alignment: .leading, spacing: 22) {
+            settingsCard
 
-            settingRow(title: L("Размер истории"), subtitle: nil) {
+            if store.records.isEmpty {
+                Text(L("Записей пока нет — продиктуйте что-нибудь."))
+                    .font(Tokens.sans(12))
+                    .foregroundStyle(Tokens.text3)
+            } else {
+                ForEach(groupedByDay, id: \.day) { group in
+                    VStack(alignment: .leading, spacing: 9) {
+                        SectionLabel(dayLabel(group.day))
+                        HistoryRecordsCard(coordinator: coordinator, records: group.records, playback: playback)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: - Настройки (карточка без заголовка, по макету)
+
+    private var settingsCard: some View {
+        VStack(spacing: 0) {
+            SettingRow(
+                title: L("Размер истории"),
+                subtitle: L("Сколько записей хранить — остальные удаляются автоматически")
+            ) {
                 TextField("", value: $historyLimit, format: .number)
                     .textFieldStyle(.plain)
                     .font(Tokens.mono(13))
-                    .multilineTextAlignment(.trailing)
+                    .multilineTextAlignment(.center)
                     .focused($sizeFocused)
                     .frame(width: 56)
-                    .padding(.horizontal, 12)
-                    .frame(height: 32)
-                    .dsFieldStyle(focused: sizeFocused)
+                    .padding(.horizontal, 14)
+                    .frame(height: 36)
+                    .dsFieldStyle(focused: sizeFocused, radius: 18)
+                    .textCursor()
+                    .unfocusOnOutsideClick($sizeFocused)
                     .onChange(of: historyLimit) { store.enforceLimits() }
-                    .onReceive(NotificationCenter.default.publisher(for: .dismissFieldFocus)) { _ in
-                        sizeFocused = false
-                    }
             }
-            Divider().overlay(Tokens.surface2)
-
-            settingRow(
+            RowDivider()
+            SettingRow(
                 title: L("Автоматическое удаление записей"),
-                subtitle: L("Сколько записей хранить — остальные удаляются автоматически")
+                subtitle: L("Старые записи удаляются, чтобы не занимать место")
             ) {
                 DesignDropdown(
                     options: Prefs.HistoryAutoDelete.allCases.map { (value: $0.rawValue, label: L($0.label)) },
@@ -48,138 +71,45 @@ struct HistoryTab: View {
                 )
                 .onChange(of: autoDelete) { store.enforceLimits() }
             }
-            Divider().overlay(Tokens.surface2)
-
-            settingRow(title: L("Папка с записями"), subtitle: nil) {
-                DSButton(variant: .secondary, compact: true) {
+            RowDivider()
+            SettingRow(title: L("Папка с записями")) {
+                OnboardingPillButton(L("Открыть"), action: {
                     NSWorkspace.shared.open(HistoryStore.recordingsFolder)
-                } label: {
-                    Label(L("Открыть в Finder"), systemImage: "folder")
-                }
-            }
-
-            SectionLabel(L("ЗАПИСИ"))
-                .padding(.top, 22)
-                .padding(.bottom, 10)
-                .overlay(alignment: .top) { Divider().overlay(Tokens.surface2) }
-
-            if store.records.isEmpty {
-                Text(L("Записей пока нет — продиктуйте что-нибудь."))
-                    .font(Tokens.sans(12))
-                    .foregroundStyle(Tokens.text3)
-            } else {
-                VStack(spacing: 10) {
-                    ForEach(store.records) { record in
-                        recordCard(record)
-                    }
-                }
-            }
-        }
-        .onDisappear {
-            playback.stop()
-        }
-    }
-
-    // MARK: - Карточка записи
-
-    private func recordCard(_ record: HistoryRecord) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Text(record.dateLabel)
-                    .font(Tokens.mono(11, weight: .medium))
-                    .foregroundStyle(Tokens.text3)
-                Spacer()
-                DSIconAction("doc.on.doc", help: L("Скопировать")) {
-                    let pasteboard = NSPasteboard.general
-                    pasteboard.clearContents()
-                    pasteboard.setString(record.text, forType: .string)
-                }
-                DSIconAction(
-                    record.favorite ? "star.fill" : "star",
-                    help: L("В избранное"),
-                    tint: record.favorite ? Tokens.processing : Tokens.text2
-                ) {
-                    store.toggleFavorite(record.id)
-                }
-                if retranscribingID == record.id {
-                    ProgressView()
-                        .controlSize(.small)
-                        .frame(width: 28, height: 28)
-                } else {
-                    DSIconAction("arrow.clockwise", help: L("Транскрибировать заново")) {
-                        retranscribe(record)
-                    }
-                }
-                DSIconAction("trash", help: L("Удалить"), hoverAccent: true) {
-                    if playback.playingID == record.id {
-                        playback.stop()
-                    }
-                    store.delete(record.id)
-                }
-            }
-
-            Text(record.text)
-                .font(Tokens.sans(13))
-                .lineSpacing(3.5)
-                .foregroundStyle(Tokens.text)
-                .textSelection(.enabled)
-                .fixedSize(horizontal: false, vertical: true)
-
-            HStack(spacing: 10) {
-                Button {
-                    playback.toggle(record.id, url: store.audioURL(for: record))
-                } label: {
-                    Image(systemName: playback.isPlaying(record.id) ? "pause.fill" : "play.fill")
+                }) {
+                    Image(systemName: "folder")
                         .font(.system(size: 13))
-                        .foregroundStyle(Tokens.text)
-                        .frame(width: 28, height: 28)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .pointerCursor()
-
-                DSProgressBar(fraction: playback.playingID == record.id ? CGFloat(playback.progress) : 0)
-
-                Text(record.durationLabel)
-                    .font(Tokens.mono(11, weight: .medium))
-                    .foregroundStyle(Tokens.text3)
-            }
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).stroke(Tokens.border, lineWidth: 1))
-    }
-
-    private func retranscribe(_ record: HistoryRecord) {
-        retranscribingID = record.id
-        Task {
-            defer { retranscribingID = nil }
-            guard let samples = try? store.samples(for: record) else { return }
-            await coordinator.models.ensureLoaded()
-            guard let text = try? await coordinator.models.transcribe(samples, options: .fromPrefs),
-                  !text.isEmpty else { return }
-            store.updateText(record.id, text: text)
-        }
-    }
-
-    // MARK: - Мелочи
-
-    private func settingRow(
-        title: String,
-        subtitle: String?,
-        @ViewBuilder trailing: () -> some View
-    ) -> some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(Tokens.sans(13)).foregroundStyle(Tokens.text)
-                if let subtitle {
-                    Text(subtitle).font(Tokens.sans(11.5)).foregroundStyle(Tokens.text3)
                 }
             }
-            Spacer()
-            trailing()
         }
-        .padding(.vertical, 12)
+        .padding(.horizontal, 20)
+        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.radiusCard))
+        .overlay(RoundedRectangle(cornerRadius: Tokens.radiusCard).stroke(Tokens.cardBorder, lineWidth: 1))
+        .onDisappear { playback.stop() }
     }
+
+    // MARK: - Группировка по дням
+
+    private var groupedByDay: [(day: Date, records: [HistoryRecord])] {
+        let calendar = Calendar.current
+        let groups = Dictionary(grouping: store.records) { calendar.startOfDay(for: $0.date) }
+        return groups.keys.sorted(by: >).map { day in
+            (day: day, records: groups[day] ?? [])
+        }
+    }
+
+    private func dayLabel(_ day: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(day) { return L("Сегодня") }
+        if calendar.isDateInYesterday(day) { return L("Вчера") }
+        return Self.dayFormatter.string(from: day)
+    }
+
+    /// «15 июля» — локаль следует за языком интерфейса (SectionLabel сам капсит).
+    private static let dayFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "d MMMM"
+        formatter.locale = Locale(identifier: AppLanguage.shared.code == .ru ? "ru_RU" : "en_US")
+        return formatter
+    }()
+
 }
