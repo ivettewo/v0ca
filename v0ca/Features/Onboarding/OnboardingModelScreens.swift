@@ -273,7 +273,7 @@ struct OnboardingModelsScreen: View {
     private func row(_ model: ModelDescriptor, state: ModelManager.ItemState, nameSize: CGFloat) -> some View {
         HStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 3) {
-                Text(model.name)
+                Text(L(model.name))
                     .font(Tokens.sans(nameSize, weight: .medium))
                     .foregroundStyle(Tokens.text)
                 Text(L(model.details))

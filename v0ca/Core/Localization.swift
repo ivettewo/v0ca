@@ -234,6 +234,16 @@ enum L10n {
         "25 языков (вкл. русский)": "25 languages (incl. Russian)",
         "Ошибка": "Error",
 
+        // Model names from the catalog: qualifiers are Russian in the base data.
+        "Whisper Small (компактная)": "Whisper Small (Compact)",
+        "Whisper Small (EN, компактная)": "Whisper Small (EN, Compact)",
+        "Whisper Large v3 Turbo (компактная)": "Whisper Large v3 Turbo (Compact)",
+        "Whisper Large v3 Turbo (мини)": "Whisper Large v3 Turbo (Mini)",
+        "Whisper Large v3 (компактная)": "Whisper Large v3 (Compact)",
+        "Whisper Large v2 (компактная)": "Whisper Large v2 (Compact)",
+        "Distil Large v3 (EN, компактная)": "Distil Large v3 (EN, Compact)",
+        "Distil Large v3 Turbo (EN, компактная)": "Distil Large v3 Turbo (EN, Compact)",
+
         // Models — descriptions from the catalog
         "Сверхбыстрая расшифровка на 25 европейских языках (вкл. русский). Работает на Neural Engine.":
             "Ultra-fast transcription in 25 European languages (incl. Russian). Runs on the Neural Engine.",

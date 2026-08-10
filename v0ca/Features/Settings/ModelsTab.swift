@@ -149,6 +149,7 @@ struct ModelsTab: View {
         models.catalog.filter { model in
             let matchesSearch = searchText.isEmpty
                 || model.name.localizedCaseInsensitiveContains(searchText)
+                || L(model.name).localizedCaseInsensitiveContains(searchText)
             let matchesLanguage: Bool = switch languageFilter {
             case .all: true
             case .multilingual: model.languages == .multilingual || model.languages == .european
@@ -213,7 +214,7 @@ struct ModelsTab: View {
         return HStack(spacing: 18) {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 8) {
-                    Text(model.name)
+                    Text(L(model.name))
                         .font(Tokens.sans(nameSize, weight: .medium))
                         .foregroundStyle(Tokens.text)
                     if isActive, models.loadState != .ready {
@@ -362,7 +363,7 @@ struct ModelsTab: View {
     /// model isn't wiped by accident.
     private func confirmAndDelete(_ model: ModelDescriptor) {
         let alert = NSAlert()
-        alert.messageText = L("Удалить модель «%@»?", model.name)
+        alert.messageText = L("Удалить модель «%@»?", L(model.name))
         alert.informativeText = L(
             "Файлы модели (%@) будут удалены с диска. Скачать заново можно в любой момент.",
             model.sizeLabel
