@@ -8,7 +8,7 @@
 .LSOverride
 Icon?
 
-# === Xcode / сборка ===
+# === Xcode / build ===
 build/
 DerivedData/
 *.moved-aside
@@ -26,14 +26,14 @@ DerivedData/
 xcuserdata/
 *.xcuserstate
 
-# Проект генерируется из project.yml через ./scripts/bootstrap.sh — в гите не нужен.
-# Версии пакетов при этом закреплены в корневом Package.resolved.
+# The project is generated from project.yml via ./scripts/bootstrap.sh — no need to track it.
+# Package versions are pinned in the root Package.resolved.
 *.xcodeproj/
 
-# Team ID и прочие локальные настройки сборки (см. Config/Local.xcconfig.example).
+# Team ID and other machine-local build settings (see Config/Local.xcconfig.example).
 Config/Local.xcconfig
 
-# Собранные установщики — раздаём через релизы, а не через репозиторий.
+# Built installers — distributed via releases, not the repository.
 installer/
 
 # === Swift Package Manager ===
@@ -42,17 +42,17 @@ installer/
 Packages/
 Package.pins
 
-# === CocoaPods / Carthage (на будущее) ===
+# === CocoaPods / Carthage (just in case) ===
 Pods/
 Carthage/Build/
 
-# === Claude Code (локальные настройки этой машины) ===
+# === Claude Code (machine-local settings) ===
 .claude/settings.local.json
 
-# === Прочее ===
+# === Misc ===
 *.log
 *.tmp
 
-# Дизайн-макеты и инструкции для ассистента — не в гит
+# Design mockups and assistant instructions — not tracked
 design/
 CLAUDE.md

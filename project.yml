@@ -21,11 +21,11 @@ targets:
     type: application
     platform: macOS
     sources:
-      # Заметки для разработчика в бандл не кладём (лицензии — кладём).
+      # Developer notes don't go into the bundle (licenses do).
       - path: v0ca
         excludes:
           - "**/*.md"
-    # Team ID и прочее машинно-специфичное — в Config/Local.xcconfig (не в гите).
+    # Team ID and other machine-specific settings live in Config/Local.xcconfig (gitignored).
     configFiles:
       Debug: Config/Local.xcconfig
       Release: Config/Local.xcconfig
@@ -45,9 +45,10 @@ targets:
         DEAD_CODE_STRIPPING: YES
       configs:
         Release:
-          # Xcode при подписи Development-сертификатом сам дописывает отладочные
-          # права, включая com.apple.security.get-task-allow (разрешает подключить
-          # отладчик к работающему приложению). В раздаваемой сборке это лишнее.
+          # When signing with a Development certificate, Xcode adds debug
+          # entitlements on its own, including com.apple.security.get-task-allow
+          # (lets a debugger attach to the running app). Unnecessary in a
+          # distributed build.
           CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
     dependencies:
       - package: WhisperKit

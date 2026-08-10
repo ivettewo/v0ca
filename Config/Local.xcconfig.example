@@ -1,9 +1,9 @@
-// Локальные настройки сборки этой машины. Скопируй в Local.xcconfig и подставь свои значения:
+// Machine-local build settings. Copy to Local.xcconfig and fill in your values:
 //     cp Config/Local.xcconfig.example Config/Local.xcconfig
 //
-// Local.xcconfig в .gitignore — Team ID не попадает в репозиторий.
-// Без DEVELOPMENT_TEAM проект собирается, но не подписывается: приложению не
-// выдать разрешения на микрофон и Accessibility надолго (macOS сбрасывает их
-// при каждой пересборке).
+// Local.xcconfig is gitignored — the Team ID never lands in the repository.
+// Without DEVELOPMENT_TEAM the project builds but isn't signed: the app can't
+// keep its microphone and Accessibility permissions (macOS resets them on
+// every rebuild).
 
 DEVELOPMENT_TEAM =
