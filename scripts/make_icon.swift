@@ -1,24 +1,18 @@
 // App icon: "v0" on a white background — v in black, 0 in a contrasting orange.
-// Font — Google Sans Code from the bundle (the logo font).
+// Font — Atkinson Hyperlegible Mono from the bundle (the logo font).
 // Usage: swift scripts/make_icon.swift <output .iconset directory>
 import AppKit
 
 let outDir = CommandLine.arguments.count > 1 ? CommandLine.arguments[1] : "AppIcon.iconset"
 try? FileManager.default.createDirectory(atPath: outDir, withIntermediateDirectories: true)
 
-// Register Google Sans Code from the project resources
-let fontURL = URL(fileURLWithPath: "v0ca/Resources/Fonts/GoogleSansCode.ttf")
+// Register the logo font from the project resources
+let fontURL = URL(fileURLWithPath: "v0ca/Resources/Fonts/AtkinsonHyperlegibleMono-SemiBold.ttf")
 CTFontManagerRegisterFontsForURL(fontURL as CFURL, .process, nil)
 
 func logoFont(size: CGFloat) -> NSFont {
-    if let font = NSFont(name: "Google Sans Code", size: size) {
-        // Pull a bold weight out of the variable font
-        let descriptor = font.fontDescriptor.addingAttributes([
-            .variation: [2003265652: 600] // wght axis
-        ])
-        return NSFont(descriptor: descriptor, size: size) ?? font
-    }
-    return NSFont.monospacedSystemFont(ofSize: size, weight: .semibold)
+    NSFont(name: "AtkinsonHyperlegibleMono-SemiBold", size: size)
+        ?? NSFont.monospacedSystemFont(ofSize: size, weight: .semibold)
 }
 
 func draw(size: CGFloat) -> NSImage {
