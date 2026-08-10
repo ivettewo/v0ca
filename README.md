@@ -73,3 +73,7 @@ Shortcuts are editable during onboarding and later in Settings, with a live key-
 - Fonts: [Google Sans](https://fonts.google.com/specimen/Google+Sans) (UI) and [Atkinson Hyperlegible Mono](https://fonts.google.com/specimen/Atkinson+Hyperlegible+Mono) (logo), both bundled under the [SIL Open Font License](https://openfontlicense.org) — license texts ship in `v0ca/Resources/Fonts/`
 
 Developer docs live in [`docs/`](docs/): [architecture](docs/ARCHITECTURE.md), [design tokens](docs/DESIGN.md), [model catalog](docs/MODELS.md), [roadmap](docs/PLAN.md).
+
+## License
+
+Released under the [MIT License](LICENSE).
