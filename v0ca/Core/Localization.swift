@@ -70,12 +70,12 @@ enum L10n {
         // Новый онбординг (окно-визард)
         "Настройка v0ca": "Set up v0ca",
         "Новый онбординг": "New onboarding",
-        "Локальная транскрибация голоса. Всё работает на вашем Mac — три шага, и можно диктовать.":
-            "Local voice transcription. Everything runs on your Mac — three steps and you can dictate.",
+        "Голос — в текст, в любом приложении. Всё распознаётся локально на вашем устройстве. Три шага — и можно говорить.":
+            "Voice to text, in any app. Everything is recognized locally on your device. Three steps — and you're talking.",
         "Начать настройку": "Get started",
         "Мощно и бесплатно": "Powerful and free",
-        "Все настройки открыты с первого дня — без подписки и лимитов.":
-            "Every setting is available from day one — no subscription, no limits.",
+        "Никаких аккаунтов, подписок и лимитов — всё открыто с первого запуска.":
+            "No accounts, subscriptions or limits — everything is unlocked from the first launch.",
         "Словарь": "Dictionary",
         "Шорткаты": "Shortcuts",
         "Назад": "Back",
@@ -97,8 +97,8 @@ enum L10n {
         "Мгновенные заметки на слабом железе": "Instant notes on modest hardware",
         "Шумные записи и несколько говорящих": "Noisy recordings and multiple speakers",
         "1 язык": "1 language",
-        "Скачайте локальную модель для распознавания речи — она работает на вашем устройстве.":
-            "Download a local speech recognition model — it runs on your device.",
+        "Модель распознаёт речь прямо на устройстве. Скачайте одну — этого достаточно, чтобы начать.":
+            "The model recognizes speech right on your device. Download one — that's all you need to get started.",
         "Показать все модели": "Show all models",
         "Скрыть остальные модели": "Hide other models",
         "Скачать позже": "Download later",
@@ -112,8 +112,8 @@ enum L10n {
             "You can change the shortcuts in the app at any time.",
         "Завершить": "Finish",
         "Всё готово": "All set",
-        "Можно пользоваться: нажмите установленную комбинацию в любом приложении — и начинайте говорить.":
-            "You're ready: press your combination in any app and start talking.",
+        "Нажмите установленную комбинацию и говорите.":
+            "Press your shortcut and speak.",
         "Спасибо, записал — присылай детали": "Thanks, noted — send over the details",
         "Готово": "Done",
 

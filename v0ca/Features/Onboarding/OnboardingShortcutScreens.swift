@@ -181,7 +181,7 @@ struct OnboardingFinalScreen: View {
                         Text(L("Всё готово"))
                             .font(Tokens.sans(32, weight: .semibold))
                             .foregroundStyle(Tokens.text)
-                        Text(L("Можно пользоваться: нажмите установленную комбинацию в любом приложении — и начинайте говорить."))
+                        Text(L("Нажмите установленную комбинацию и говорите."))
                             .font(Tokens.sans(14))
                             .foregroundStyle(Tokens.text2)
                             .multilineTextAlignment(.center)

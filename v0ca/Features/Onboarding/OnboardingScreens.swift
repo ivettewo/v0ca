@@ -16,7 +16,7 @@ struct OnboardingIntroScreen: View {
                 VStack(spacing: 14) {
                     AnimatedLogo()
 
-                    Text(L("Локальная транскрибация голоса. Всё работает на вашем Mac — три шага, и можно диктовать."))
+                    Text(L("Голос — в текст, в любом приложении. Всё распознаётся локально на вашем устройстве. Три шага — и можно говорить."))
                         .font(Tokens.sans(14))
                         .foregroundStyle(Tokens.text2)
                         .multilineTextAlignment(.center)
@@ -107,7 +107,7 @@ struct OnboardingPowerFreeScreen: View {
                         Text(L("Мощно и бесплатно"))
                             .font(Tokens.sans(32, weight: .semibold))
                             .foregroundStyle(Tokens.text)
-                        Text(L("Все настройки открыты с первого дня — без подписки и лимитов."))
+                        Text(L("Никаких аккаунтов, подписок и лимитов — всё открыто с первого запуска."))
                             .font(Tokens.sans(14))
                             .foregroundStyle(Tokens.text2)
                             .multilineTextAlignment(.center)

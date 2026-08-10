@@ -160,7 +160,7 @@ struct OnboardingModelsScreen: View {
                 headerGradient
                 ScrollView {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(L("Скачайте локальную модель для распознавания речи — она работает на вашем устройстве."))
+                        Text(L("Модель распознаёт речь прямо на устройстве. Скачайте одну — этого достаточно, чтобы начать."))
                             .font(Tokens.sans(13.5))
                             .foregroundStyle(Tokens.text2)
 
