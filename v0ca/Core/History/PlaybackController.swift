@@ -1,14 +1,14 @@
 import AVFoundation
 import Observation
 
-/// Плеер записей истории: одна запись за раз, прогресс для полосы.
+/// Player for history recordings: one recording at a time, progress for the bar.
 @MainActor
 @Observable
 final class PlaybackController {
     private(set) var playingID: UUID?
     private(set) var progress: Double = 0 // 0…1
-    /// Пауза — отдельное наблюдаемое поле: `player.isPlaying` вью не отслеживают,
-    /// и иконка play/pause не обновлялась при паузе/возобновлении.
+    /// Pause is a separate observable field: views don't track `player.isPlaying`,
+    /// so the play/pause icon wasn't updating on pause/resume.
     private(set) var paused = false
 
     @ObservationIgnored private var player: AVAudioPlayer?
@@ -55,7 +55,7 @@ final class PlaybackController {
     private func tick() {
         guard let player else { return }
         progress = player.duration > 0 ? player.currentTime / player.duration : 0
-        // Дошли до конца — сбрасываемся.
+        // Reached the end — reset.
         if !player.isPlaying, player.currentTime == 0 || player.currentTime >= player.duration - 0.05 {
             stop()
         }

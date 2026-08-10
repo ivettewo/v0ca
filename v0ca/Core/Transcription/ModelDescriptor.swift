@@ -19,8 +19,8 @@ enum LanguageSupport: String, Codable {
     }
 }
 
-/// Модель из каталога (ModelCatalog.json). См. docs/MODELS.md.
-/// Только `Decodable`: каталог читается из бандла и обратно не пишется.
+/// A model from the catalog (ModelCatalog.json). See docs/MODELS.md.
+/// `Decodable` only: the catalog is read from the bundle and never written back.
 struct ModelDescriptor: Decodable, Identifiable, Hashable {
     let id: String
     let engine: EngineKind
@@ -32,10 +32,10 @@ struct ModelDescriptor: Decodable, Identifiable, Hashable {
     let speed: Int // 1–10
     let recommended: Bool
     let quantized: Bool
-    /// Умеет ли модель переводить речь на английский (Whisper task=translate).
-    /// В JSON — необязательный ключ `translate`; по умолчанию выводится из движка
-    /// и языков. Явно `false` нужен турбо-моделям: OpenAI дообучала их без данных
-    /// перевода, поэтому режим перевода у них не работает.
+    /// Whether the model can translate speech to English (Whisper task=translate).
+    /// Optional `translate` key in JSON; by default derived from the engine and
+    /// languages. Turbo models need an explicit `false`: OpenAI fine-tuned them
+    /// without translation data, so their translate mode doesn't work.
     let canTranslateToEnglish: Bool
 
     var sizeLabel: String {
@@ -44,8 +44,8 @@ struct ModelDescriptor: Decodable, Identifiable, Hashable {
             : "\(sizeMB) MB"
     }
 
-    // recommended/quantized в JSON необязательны — synthesized-декодер Swift
-    // требует все ключи, поэтому декодируем сами.
+    // recommended/quantized are optional in JSON — Swift's synthesized decoder
+    // requires all keys, so we decode manually.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
@@ -58,8 +58,8 @@ struct ModelDescriptor: Decodable, Identifiable, Hashable {
         speed = try container.decode(Int.self, forKey: .speed)
         recommended = try container.decodeIfPresent(Bool.self, forKey: .recommended) ?? false
         quantized = try container.decodeIfPresent(Bool.self, forKey: .quantized) ?? false
-        // Parakeet (FluidAudio) всегда расшифровывает как есть, англоязычным
-        // моделям переводить не с чего — остальным разрешаем, если JSON не спорит.
+        // Parakeet (FluidAudio) always transcribes as is, and English-only models
+        // have nothing to translate from — allow the rest unless JSON says otherwise.
         canTranslateToEnglish = try container.decodeIfPresent(Bool.self, forKey: .translate)
             ?? (engine == .whisperKit && languages != .englishOnly)
     }

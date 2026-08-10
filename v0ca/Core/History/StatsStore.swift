@@ -2,9 +2,10 @@ import Foundation
 import Observation
 import OSLog
 
-/// Статистика диктовки для вкладки «Диктовка»: агрегаты по дням в отдельном
-/// JSON (`stats.json` рядом с историей). Не зависит от истории записей —
-/// та подрезается лимитами, а статистика копится вечно (одна строка на день).
+/// Dictation stats for the Dictation tab: per-day aggregates in a separate
+/// JSON file (`stats.json` next to the history). Independent of the recording
+/// history — that gets trimmed by limits, while stats accumulate forever
+/// (one row per day).
 @MainActor
 @Observable
 final class StatsStore {
@@ -13,7 +14,7 @@ final class StatsStore {
         var dictations: Int
     }
 
-    /// Ключ — день в формате "yyyy-MM-dd" (локальная таймзона).
+    /// Keyed by day in "yyyy-MM-dd" format (local time zone).
     private(set) var days: [String: DayStats] = [:]
 
     @ObservationIgnored private let log = Logger(category: "StatsStore")
@@ -26,8 +27,8 @@ final class StatsStore {
         load()
     }
 
-    /// Засчитать успешную диктовку: слова — по разбивке на пробелы.
-    /// Перетранскрибация старых записей сюда не попадает — это не новая диктовка.
+    /// Count a successful dictation: words are split on whitespace.
+    /// Re-transcribing old recordings doesn't go through here — it's not a new dictation.
     func addDictation(text: String) {
         let words = text.split(whereSeparator: \.isWhitespace).count
         guard words > 0 else { return }
@@ -39,20 +40,20 @@ final class StatsStore {
         save()
     }
 
-    // MARK: - Метрики
+    // MARK: - Metrics
 
     var totalWords: Int {
         days.values.reduce(0) { $0 + $1.words }
     }
 
-    /// Среднее по активным дням (дни хотя бы с одной диктовкой).
+    /// Average over active days (days with at least one dictation).
     var averageWordsPerDay: Int {
         guard !days.isEmpty else { return 0 }
         return totalWords / days.count
     }
 
-    /// Дней подряд с диктовками. Сегодняшний день не обязателен, пока не кончился:
-    /// если сегодня ещё не диктовали, стрик считается от вчера и не рвётся.
+    /// Consecutive days with dictations. Today isn't required until it's over:
+    /// if nothing was dictated yet today, the streak counts from yesterday and doesn't break.
     var streakDays: Int {
         let calendar = Calendar.current
         var day = calendar.startOfDay(for: Date())
@@ -68,7 +69,7 @@ final class StatsStore {
         return streak
     }
 
-    // MARK: - Хранение
+    // MARK: - Storage
 
     private static func dayKey(_ date: Date) -> String {
         dayFormatter.string(from: date)

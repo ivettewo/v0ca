@@ -1,6 +1,6 @@
 import Observation
 
-/// Активная вкладка окна настроек — чтобы открывать окно сразу на нужной вкладке.
+/// Active settings window tab — lets the window open straight on the right tab.
 @MainActor
 @Observable
 final class SettingsRouter {

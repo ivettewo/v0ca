@@ -2,10 +2,10 @@ import AVFoundation
 import ApplicationServices
 import SwiftUI
 
-// MARK: - 01A · Интро
+// MARK: - 01A · Intro
 
-/// Логотип на градиенте + подзаголовок. Шрифт логотипа — системный mono,
-/// как везде в приложении (Unbounded из ранних макетов не используем).
+/// Logo on a gradient + subtitle. The logo font is the system mono, as everywhere
+/// in the app (Unbounded from the early mockups is not used).
 struct OnboardingIntroScreen: View {
     let start: () -> Void
 
@@ -35,15 +35,15 @@ struct OnboardingIntroScreen: View {
     }
 }
 
-/// Логотип «v0ca.» с анимацией из макета (keyframes `vletter`): каждая буква
-/// всплывает снизу с фейдом, задержки ступенькой, держится и растворяется;
-/// цикл 7 секунд. Точка — акцентная.
+/// "v0ca." logo with the mockup animation (`vletter` keyframes): each letter
+/// floats up from below with a fade, staggered delays, holds, then dissolves;
+/// 7-second cycle. The dot is accent-colored.
 private struct AnimatedLogo: View {
     private static let letters: [(char: String, accent: Bool, delay: Double)] = [
         ("v", false, 0), ("0", false, 0.12), ("c", false, 0.24), ("a", false, 0.36), (".", true, 0.5),
     ]
 
-    /// cubic-bezier(.2,.7,.2,1) из макета.
+    /// cubic-bezier(.2,.7,.2,1) from the mockup.
     private static let curve = UnitCurve.bezier(
         startControlPoint: UnitPoint(x: 0.2, y: 0.7),
         endControlPoint: UnitPoint(x: 0.2, y: 1)
@@ -67,9 +67,9 @@ private struct AnimatedLogo: View {
         }
     }
 
-    /// Керфреймы как в макете (появление снизу → пауза → растворение), но цикл
-    /// короче (3s против 7s в HTML) и рампы быстрее — чтобы между исчезновением
-    /// и новым появлением не висела долгая пустота.
+    /// Keyframes as in the mockup (rise from below → hold → dissolve), but the cycle
+    /// is shorter (3s vs 7s in the HTML) and the ramps are faster — so there's no long
+    /// gap between the fade-out and the next appearance.
     private static func state(at time: Double, delay: Double) -> (opacity: Double, offset: Double) {
         let local = time - delay
         guard local >= 0 else { return (0, 14) }
@@ -87,10 +87,10 @@ private struct AnimatedLogo: View {
     }
 }
 
-// MARK: - 01B · Мощно и бесплатно
+// MARK: - 01B · Powerful and free
 
-/// Интерстишл: статичный мокап сайдбара настроек, уходящий в белое затухание,
-/// снизу — заголовок с описанием. Анимации из HTML-макета пока не переносим.
+/// Interstitial: a static mock of the settings sidebar fading into white, with a
+/// title and description below. Animations from the HTML mockup are not ported yet.
 struct OnboardingPowerFreeScreen: View {
     let back: () -> Void
     let next: () -> Void
@@ -129,9 +129,9 @@ struct OnboardingPowerFreeScreen: View {
 
     private let animationStart = Date()
 
-    /// Мокап списка вкладок настроек; низ уходит в белый. Строки по очереди
-    /// подсвечиваются (керфреймы `vtab` из макета: цикл 8s, задержки 0/2/4/6 —
-    /// Общие, Звук, Модели, История; Словарь и Шорткаты статичные).
+    /// Mock of the settings tab list; the bottom fades to white. Rows highlight in
+    /// turn (`vtab` keyframes from the mockup: 8s cycle, delays 0/2/4/6 —
+    /// General, Sound, Models, History; Dictionary and Shortcuts stay static).
     private var sidebarMock: some View {
         TimelineView(.animation) { context in
             let now = OnboardingClock.elapsed(context.date, since: animationStart)
@@ -149,8 +149,8 @@ struct OnboardingPowerFreeScreen: View {
         .background(Tokens.surface.opacity(0.94), in: RoundedRectangle(cornerRadius: 18))
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(Tokens.hairline, lineWidth: 1))
         .frame(height: 250, alignment: .top)
-        // Затухание — внутри границ карточки, до clipped: иначе белый градиент
-        // рисуется поверх фона экрана полосами вокруг карточки.
+        // The fade stays within the card bounds, before clipped: otherwise the white
+        // gradient is drawn over the screen background as bands around the card.
         .overlay(alignment: .bottom) {
             LinearGradient(
                 stops: [
@@ -165,8 +165,8 @@ struct OnboardingPowerFreeScreen: View {
         .clipped()
     }
 
-    /// `highlight` 0…1 — сила подсветки: розовый фон и перекраска текста в красный
-    /// (плавный кроссфейд двумя слоями — Color.mix требует macOS 15).
+    /// `highlight` 0…1 — highlight strength: pink background and text recolored to red
+    /// (smooth crossfade with two layers — Color.mix requires macOS 15).
     private func mockRow(_ symbol: String, _ title: String, highlight: Double) -> some View {
         HStack(spacing: 11) {
             Image(systemName: symbol)
@@ -194,7 +194,7 @@ struct OnboardingPowerFreeScreen: View {
         .background(Tokens.accentSoft.opacity(highlight), in: RoundedRectangle(cornerRadius: 10))
     }
 
-    /// Керфреймы `vtab`: цикл 8s, разгорается к 4%, горит до 21%, гаснет к 25%.
+    /// `vtab` keyframes: 8s cycle, ramps up by 4%, stays lit until 21%, fades out by 25%.
     private static func highlight(at time: Double, delay: Double) -> Double {
         let local = time - delay
         guard local >= 0 else { return 0 }
@@ -208,11 +208,11 @@ struct OnboardingPowerFreeScreen: View {
     }
 }
 
-// MARK: - 02A–04A · Разрешения
+// MARK: - 02A–04A · Permissions
 
-/// Шаг 1: карточки Микрофона и Универсального доступа с живыми состояниями
-/// (кнопка «Разрешить» → спиннер «Запрос…» → бейдж «Разрешено»). «Далее»
-/// активна только когда выданы оба разрешения; «Настроить позже» пропускает шаг.
+/// Step 1: Microphone and Accessibility cards with live states
+/// ("Allow" button → "Requesting…" spinner → "Granted" badge). "Next" is enabled
+/// only when both permissions are granted; "Set up later" skips the step.
 struct OnboardingPermissionsScreen: View {
     let back: () -> Void
     let next: () -> Void
@@ -222,8 +222,8 @@ struct OnboardingPermissionsScreen: View {
     @State private var axGranted = AXIsProcessTrusted()
     @State private var axRequested = false
 
-    /// Разрешения выдаются в системных настройках, вне приложения —
-    /// перечитываем раз в секунду, как на вкладке «Разрешения».
+    /// Permissions are granted in System Settings, outside the app —
+    /// re-poll once a second, as on the Permissions tab.
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var allGranted: Bool { micStatus == .authorized && axGranted }
@@ -277,7 +277,7 @@ struct OnboardingPermissionsScreen: View {
         axGranted = AXIsProcessTrusted()
     }
 
-    // MARK: Карточка
+    // MARK: Card
 
     private func permissionCard(
         title: String,
@@ -302,7 +302,7 @@ struct OnboardingPermissionsScreen: View {
         .overlay(RoundedRectangle(cornerRadius: 18).stroke(Tokens.border, lineWidth: 1))
     }
 
-    // MARK: Микрофон
+    // MARK: Microphone
 
     @ViewBuilder
     private var micControl: some View {
@@ -323,14 +323,14 @@ struct OnboardingPermissionsScreen: View {
                 }
             }
         default:
-            // Отклонено: системный запрос больше не покажется — только настройки.
+            // Denied: the system prompt won't show again — only System Settings.
             OnboardingPillButton(L("Открыть настройки")) {
                 openSystemSettings("Privacy_Microphone")
             }
         }
     }
 
-    // MARK: Универсальный доступ
+    // MARK: Accessibility
 
     @ViewBuilder
     private var axControl: some View {
@@ -348,7 +348,7 @@ struct OnboardingPermissionsScreen: View {
         }
     }
 
-    // MARK: Состояния
+    // MARK: States
 
     private var grantedBadge: some View {
         HStack(spacing: 6) {

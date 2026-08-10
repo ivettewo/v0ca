@@ -1,20 +1,20 @@
 import Foundation
 import OSLog
 
-/// Быстрая загрузка моделей WhisperKit напрямую с Hugging Face.
+/// Fast download of WhisperKit models directly from Hugging Face.
 ///
-/// Штатный `WhisperKit.download` читает файл побайтово через `URLSession.bytes`
-/// (`for try await byte in asyncBytes`) — это упирается в CPU и делает загрузку
-/// многогигабайтных моделей чудовищно медленной независимо от скорости сети.
-/// Здесь качаем нативным `URLSession.downloadTask` (чанковая загрузка) в ту же
-/// папку, где WhisperKit потом ищет модель, поэтому его загрузчик не включается.
+/// The stock `WhisperKit.download` reads the file byte by byte via `URLSession.bytes`
+/// (`for try await byte in asyncBytes`) — that's CPU-bound and makes downloading
+/// multi-gigabyte models painfully slow regardless of network speed.
+/// Here we download with the native `URLSession.downloadTask` (chunked download) into
+/// the same folder where WhisperKit later looks for the model, so its own downloader never kicks in.
 enum HFModelDownloader {
     static let repo = "argmaxinc/whisperkit-coreml"
     private static let log = Logger(category: "HFModelDownloader")
 
     enum DownloadError: Error { case listFailed(String), notFound(String), moveFailed }
 
-    /// Корневая папка репозитория на диске (совпадает с тем, что использует WhisperKit).
+    /// Root folder of the repo on disk (matches what WhisperKit uses).
     static var repoFolder: URL {
         FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("huggingface/models/\(repo)", isDirectory: true)
@@ -33,9 +33,9 @@ enum HFModelDownloader {
         var byteSize: Int64 { lfs?.size ?? size ?? 0 }
     }
 
-    /// Скачивает все файлы варианта модели. Возвращает папку модели.
-    /// `progress` — доля 0…1 по суммарным байтам. Уже скачанные файлы (по размеру)
-    /// пропускаются, так что вызов идемпотентен и поддерживает докачку.
+    /// Downloads all files of the model variant. Returns the model folder.
+    /// `progress` — fraction 0…1 by total bytes. Already-downloaded files (matched
+    /// by size) are skipped, so the call is idempotent and supports resuming.
     @discardableResult
     static func download(
         variant id: String,
@@ -47,7 +47,7 @@ enum HFModelDownloader {
         let total = files.reduce(Int64(0)) { $0 + $1.byteSize }
         try FileManager.default.createDirectory(at: repoFolder, withIntermediateDirectories: true)
 
-        // Разделяем на уже скачанные (по размеру) и требующие загрузки.
+        // Split into already downloaded (by size) and still needing download.
         var pending: [TreeItem] = []
         var alreadyDone: Int64 = 0
         for file in files {
@@ -63,8 +63,8 @@ enum HFModelDownloader {
         let counter = ByteProgress(done: alreadyDone, total: total, report: progress)
         counter.emit()
 
-        // Качаем параллельно (несколько файлов разом): прячет задержку HF-редиректа
-        // на каждом файле и полнее использует канал. Ограничиваем одновременность.
+        // Download in parallel (several files at once): hides the HF redirect latency
+        // per file and uses the bandwidth more fully. Concurrency is capped.
         let maxConcurrent = 5
         try await withThrowingTaskGroup(of: Void.self) { group in
             var index = 0
@@ -92,7 +92,7 @@ enum HFModelDownloader {
         return modelFolder(for: id)
     }
 
-    // MARK: - Список файлов
+    // MARK: - File listing
 
     private static func listFiles(variant id: String) async throws -> [TreeItem] {
         let listURL = URL(string:
@@ -110,9 +110,9 @@ enum HFModelDownloader {
         return URL(string: "https://huggingface.co/\(repo)/resolve/main/\(encoded)")
     }
 
-    // MARK: - Один файл (нативная чанковая загрузка + прогресс)
+    // MARK: - Single file (native chunked download + progress)
 
-    /// `onDelta` — сколько байт прибавилось с прошлого вызова (для суммарного прогресса).
+    /// `onDelta` — how many bytes were added since the last call (for the total progress).
     private static func downloadFile(
         from remote: URL,
         to local: URL,
@@ -149,15 +149,15 @@ enum HFModelDownloader {
                 task.resume()
             }
         } onCancel: {
-            // Реально прерываем сетевую загрузку, а не только наблюдение.
+            // Actually abort the network download, not just the observation.
             state.token?.invalidate()
             state.task?.cancel()
         }
     }
 }
 
-/// Потокобезопасный счётчик суммарно скачанных байт для прогресса при
-/// параллельной загрузке нескольких файлов.
+/// Thread-safe counter of total downloaded bytes for progress reporting
+/// while several files download in parallel.
 private final class ByteProgress: @unchecked Sendable {
     private let lock = NSLock()
     private var done: Int64

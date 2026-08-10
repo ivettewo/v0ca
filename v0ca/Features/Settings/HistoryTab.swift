@@ -1,11 +1,11 @@
 import AppKit
 import SwiftUI
 
-/// Вкладка «История» по макету «Настройки · Новые экраны», вкладка 04:
-/// сверху карточка настроек (автоудаление + папка), ниже записи, сгруппированные
-/// по дням (Сегодня / Вчера / дата) в табличном виде: время слева, текст,
-/// действия справа — появляются только при наведении на строку. Воспроизведение
-/// без прогресс-бара: клик по play сразу играет запись.
+/// "History" tab per the "Settings · New screens" mockup, tab 04:
+/// settings card on top (auto-delete + folder), records below, grouped
+/// by day (Today / Yesterday / date) in tabular form: time on the left, text,
+/// actions on the right — shown only when hovering a row. Playback has
+/// no progress bar: clicking play plays the record right away.
 struct HistoryTab: View {
     let coordinator: RecordingCoordinator
 
@@ -18,8 +18,8 @@ struct HistoryTab: View {
     private var store: HistoryStore { coordinator.history }
 
     var body: some View {
-        // LazyVStack: при большой истории строятся только видимые карточки дней,
-        // иначе сотня строк лейаутится разом и скролл лагает.
+        // LazyVStack: with a large history only visible day cards are built,
+        // otherwise a hundred rows lay out at once and scrolling stutters.
         LazyVStack(alignment: .leading, spacing: 22) {
             settingsCard
 
@@ -38,7 +38,7 @@ struct HistoryTab: View {
         }
     }
 
-    // MARK: - Настройки (карточка без заголовка, по макету)
+    // MARK: - Settings (untitled card, per the mockup)
 
     private var settingsCard: some View {
         VStack(spacing: 0) {
@@ -87,7 +87,7 @@ struct HistoryTab: View {
         .onDisappear { playback.stop() }
     }
 
-    // MARK: - Группировка по дням
+    // MARK: - Grouping by day
 
     private var groupedByDay: [(day: Date, records: [HistoryRecord])] {
         let calendar = Calendar.current
@@ -104,7 +104,7 @@ struct HistoryTab: View {
         return Self.dayFormatter.string(from: day)
     }
 
-    /// «15 июля» — локаль следует за языком интерфейса (SectionLabel сам капсит).
+    /// "15 июля" — locale follows the UI language (SectionLabel handles uppercasing).
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateFormat = "d MMMM"

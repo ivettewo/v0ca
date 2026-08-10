@@ -18,15 +18,15 @@ struct GeneralTab: View {
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @Bindable private var language = AppLanguage.shared
     @AppStorage(Prefs.Key.appTheme) private var appTheme: String = Prefs.AppTheme.light.rawValue
-    /// Акцент — через AccentStore: перекрашивает интерфейс сразу.
+    /// Accent goes through AccentStore: recolors the UI immediately.
     @State private var accentStore = AccentStore.shared
 
-    /// Палитра акцентов: пять из макета + изумрудный и голубой.
+    /// Accent palette: five from the mockup + emerald and light blue.
     private static let accentOptions = [
         "E03E3E", "D9823E", "5FA173", "3AA68B", "55A9CE", "5B84C0", "9C74C4",
     ]
 
-    /// Перевод умеет только мультиязычный Whisper — иначе тумблер неактивен.
+    /// Only multilingual Whisper can translate — otherwise the toggle is disabled.
     private var canTranslate: Bool {
         coordinator.models.activeModel?.canTranslateToEnglish ?? false
     }
@@ -118,7 +118,7 @@ struct GeneralTab: View {
 
         SettingsSection(title: L("Система")) {
             SettingRow(title: L("Язык интерфейса")) {
-                // Подписи — самоназвания языков, не переводятся.
+                // Labels are language endonyms, not translated.
                 DSSegmentedControl(
                     options: AppLanguage.Code.allCases.map { (value: $0, label: $0.label) },
                     selection: $language.code
@@ -184,7 +184,7 @@ struct GeneralTab: View {
         }
     }
 
-    /// Кружок акцента 22px; выбранный — белый зазор и внешнее цветное кольцо.
+    /// 22px accent dot; the selected one gets a white gap and an outer colored ring.
     private func accentDot(_ hex: String) -> some View {
         let color = Color(hex: UInt32(hex, radix: 16) ?? 0xE03E3E)
         return Button {

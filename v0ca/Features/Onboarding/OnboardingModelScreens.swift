@@ -1,9 +1,9 @@
 import SwiftUI
 
-// MARK: - 04B · Модель на ваш выбор
+// MARK: - 04B · A model of your choice
 
-/// Интерстишл перед шагом моделей: статичный мокап списка моделей (названия —
-/// скелетоны, описания настоящие), снизу заголовок. Анимации макета не переносим.
+/// Interstitial before the models step: a static mock of the model list (names are
+/// skeletons, descriptions are real), title at the bottom. Mockup animations are not ported.
 struct OnboardingModelIntroScreen: View {
     let back: () -> Void
     let next: () -> Void
@@ -45,8 +45,8 @@ struct OnboardingModelIntroScreen: View {
 
     private let animationStart = Date()
 
-    /// Список медленно проскролливается вниз и обратно (керфреймы `vscrollList`
-    /// из макета: цикл 14s, ход −190px с паузами на краях).
+    /// The list slowly scrolls down and back (`vscrollList` keyframes from the
+    /// mockup: 14s cycle, −190px travel with pauses at the ends).
     private var modelListMock: some View {
         TimelineView(.animation) { context in
             let offset = Self.scrollOffset(at: OnboardingClock.elapsed(context.date, since: animationStart))
@@ -83,8 +83,8 @@ struct OnboardingModelIntroScreen: View {
         .clipped()
     }
 
-    /// Керфреймы `vscrollList`: 0–8% стоим, к 54% уезжаем на 190px, до 62% пауза,
-    /// к 100% плавно возвращаемся.
+    /// `vscrollList` keyframes: hold at 0–8%, travel 190px by 54%, pause until 62%,
+    /// then ease back by 100%.
     private static func scrollOffset(at time: Double) -> Double {
         let phase = time.truncatingRemainder(dividingBy: 14) / 14
         switch phase {
@@ -111,7 +111,7 @@ struct OnboardingModelIntroScreen: View {
     }
 }
 
-/// Иконка + подпись метаданных модели (языки, размер).
+/// Icon + label for model metadata (languages, size).
 private func metaLabel(_ symbol: String, _ text: String, mono: Bool, size: CGFloat = 12) -> some View {
     HStack(spacing: 6) {
         Image(systemName: symbol)
@@ -123,12 +123,12 @@ private func metaLabel(_ symbol: String, _ text: String, mono: Bool, size: CGFlo
     .foregroundStyle(Tokens.textMeta)
 }
 
-// MARK: - 05A–07A · Модели
+// MARK: - 05A–07A · Models
 
-/// Шаг 2: реальный каталог. Сверху две рекомендованные модели (Whisper Small
-/// и Whisper Large v3 Turbo — компактные варианты), остальные — под разворотом.
-/// Загрузка с прогрессом через ModelManager; «Далее» активна, когда на диске
-/// есть хотя бы одна модель.
+/// Step 2: the real catalog. Two recommended models on top (Whisper Small and
+/// Whisper Large v3 Turbo — the compact variants), the rest behind a disclosure.
+/// Download with progress via ModelManager; "Next" is enabled once at least one
+/// model is on disk.
 struct OnboardingModelsScreen: View {
     let models: ModelManager
     let back: () -> Void
@@ -136,7 +136,7 @@ struct OnboardingModelsScreen: View {
 
     @State private var showAll = false
 
-    /// Верхние карточки: дефолтная компактная Small и компактный турбо-флагман.
+    /// Top cards: the default compact Small and the compact turbo flagship.
     private static let featuredIDs = [
         "openai_whisper-small_216MB",
         "openai_whisper-large-v3-v20240930_626MB",
@@ -206,8 +206,8 @@ struct OnboardingModelsScreen: View {
         }
     }
 
-    /// Фон шапки: горизонтальный сине-серый градиент, растворяющийся вниз
-    /// (в макете — linear-gradient c mask, не радиальные пятна остальных экранов).
+    /// Header background: a horizontal blue-gray gradient fading downward
+    /// (a linear-gradient with a mask in the mockup, not the radial blobs of the other screens).
     private var headerGradient: some View {
         LinearGradient(
             colors: [HeaderGradient.modelsLinear.start, HeaderGradient.modelsLinear.end],
@@ -228,7 +228,7 @@ struct OnboardingModelsScreen: View {
         .allowsHitTesting(false)
     }
 
-    // MARK: Карточки
+    // MARK: Cards
 
     private func featuredCard(_ model: ModelDescriptor) -> some View {
         let state = models.itemStates[model.id] ?? .notDownloaded
@@ -292,7 +292,7 @@ struct OnboardingModelsScreen: View {
         }
     }
 
-    /// Полоски «Точность» / «Скорость» (заполнение — из каталога, шкала 1–10).
+    /// "Accuracy" / "Speed" bars (fill comes from the catalog, 1–10 scale).
     private func bars(_ model: ModelDescriptor) -> some View {
         VStack(spacing: 8) {
             bar(L("Точность"), value: model.accuracy)
@@ -324,8 +324,8 @@ struct OnboardingModelsScreen: View {
         case .notDownloaded:
             OnboardingDownloadButton { models.download(model.id) }
         case .downloading:
-            // В макете тут процент, но по факту нужнее отмена загрузки —
-            // прогресс и так виден в красной полосе снизу карточки.
+            // The mockup shows a percentage here, but canceling the download is more
+            // useful in practice — progress is already visible in the red strip below the card.
             OnboardingCancelButton { models.cancelDownload(model.id) }
         case .downloaded:
             ZStack {
@@ -338,9 +338,9 @@ struct OnboardingModelsScreen: View {
         }
     }
 
-    /// Слот полосы прогресса: полоса всегда в лейауте, «выезд» из-под строки и
-    /// обратный заезд при отмене — анимация высоты слота (0 ↔ натуральная),
-    /// контент прижат к верху и клипится. Никаких transition — реверс симметричен.
+    /// Progress-strip slot: the strip is always in the layout; sliding out from under
+    /// the row and back in on cancel is a slot-height animation (0 ↔ natural), with
+    /// content pinned to the top and clipped. No transitions — the reverse is symmetric.
     @ViewBuilder
     private func stripSlot(_ model: ModelDescriptor, state: ModelManager.ItemState, cornerRadius: CGFloat) -> some View {
         let percent: Int? = if case .downloading(let p) = state { p } else { nil }
@@ -349,9 +349,9 @@ struct OnboardingModelsScreen: View {
             .clipped()
     }
 
-    /// Красная полоса прогресса внизу карточки (макет 06A). Форма задаётся явно:
-    /// прямые верхние углы, скругление только снизу (0 — для строк в середине
-    /// списка), иначе фон системой рисуется скруглённой «пилюлей» с отступами.
+    /// Red progress strip at the card bottom (mockup 06A). The shape is set explicitly:
+    /// square top corners, rounding only at the bottom (0 for rows in the middle of the
+    /// list) — otherwise the system draws the background as a rounded, inset pill.
     private func downloadStrip(_ model: ModelDescriptor, percent: Int, cornerRadius: CGFloat) -> some View {
         let doneMB = model.sizeMB * percent / 100
         return HStack(spacing: 14) {
@@ -402,7 +402,7 @@ struct OnboardingModelsScreen: View {
     }
 }
 
-/// Круглая кнопка отмены загрузки 36×36: крестик в рамке, на ховере краснеет.
+/// Round 36×36 cancel-download button: an outlined cross that turns red on hover.
 private struct OnboardingCancelButton: View {
     let action: () -> Void
     @State private var hovering = false
@@ -424,7 +424,7 @@ private struct OnboardingCancelButton: View {
     }
 }
 
-/// Круглая красная кнопка скачивания 36×36.
+/// Round red 36×36 download button.
 private struct OnboardingDownloadButton: View {
     let action: () -> Void
     @State private var hovering = false

@@ -1,8 +1,8 @@
 import KeyboardShortcuts
 
 extension KeyboardShortcuts.Name {
-    /// Начать / остановить запись. По умолчанию ⌥ Space (из макета), редактируется в настройках.
+    /// Start / stop recording. Defaults to ⌥ Space (from the mockup), editable in Settings.
     static let toggleRecording = Self("toggleRecording", default: .init(.space, modifiers: [.option]))
-    /// Отменить запись. Включается только пока идёт запись/расшифровка, чтобы не перехватывать Esc системно.
+    /// Cancel recording. Enabled only while recording/transcribing, to avoid capturing Esc system-wide.
     static let cancelRecording = Self("cancelRecording", default: .init(.escape))
 }

@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Тонкая полоса тайтлбара под системные traffic lights: без заголовка,
-/// высота 32 — кнопки окна стоят с равными отступами сверху и снизу.
-/// Используется окнами настроек и онбординга (системный тайтлбар прозрачный).
+/// Thin title bar strip behind the system traffic lights: no title,
+/// 32pt tall — the window buttons sit with equal top and bottom margins.
+/// Used by the settings and onboarding windows (the system title bar is transparent).
 struct WindowTitleBar: View {
     var body: some View {
         Tokens.surfaceSoft

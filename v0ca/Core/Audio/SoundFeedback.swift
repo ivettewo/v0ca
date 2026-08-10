@@ -1,6 +1,6 @@
 import AppKit
 
-/// Звуки начала и завершения записи — включаются раздельно (вкладка «Звук»).
+/// Recording start/finish sounds — toggled independently (Sound tab).
 enum SoundFeedback {
     static func recordStart() {
         guard Prefs.soundStart else { return }

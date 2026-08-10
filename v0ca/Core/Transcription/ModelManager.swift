@@ -4,12 +4,12 @@ import Observation
 import OSLog
 import WhisperKit
 
-/// Владеет каталогом моделей и жизненным циклом активной модели:
-/// скачивание с прогрессом, удаление, смена активной, загрузка в память и выгрузка.
+/// Owns the model catalog and the active model's lifecycle:
+/// download with progress, deletion, switching the active model, loading into memory and unloading.
 @MainActor
 @Observable
 final class ModelManager {
-    /// Состояние активной модели в памяти (для HUD и меню-бара).
+    /// In-memory state of the active model (for the HUD and menu bar).
     enum LoadState: Equatable {
         case idle
         case downloading(Int)
@@ -18,7 +18,7 @@ final class ModelManager {
         case failed
     }
 
-    /// Состояние модели на диске (для карточек каталога).
+    /// On-disk state of the model (for catalog cards).
     enum ItemState: Equatable {
         case notDownloaded
         case downloading(Int)
@@ -38,8 +38,8 @@ final class ModelManager {
 
     init() {
         catalog = ModelCatalog.load()
-        // Если сохранённая активная модель больше не в каталоге (например, после
-        // перехода на компактные варианты) — мигрируем на дефолтную.
+        // If the saved active model is no longer in the catalog (e.g. after
+        // switching to compact variants) — migrate to the default one.
         let saved = UserDefaults.standard.string(forKey: Prefs.Key.activeModelID)
         if let saved, catalog.contains(where: { $0.id == saved }) {
             activeModelID = saved
@@ -54,9 +54,9 @@ final class ModelManager {
         catalog.first { $0.id == activeModelID }
     }
 
-    // MARK: - Диск
+    // MARK: - Disk
 
-    /// Папка модели WhisperKit (та же, куда качает HFModelDownloader).
+    /// WhisperKit model folder (the same one HFModelDownloader downloads into).
     static func modelFolder(for id: String) -> URL {
         HFModelDownloader.modelFolder(for: id)
     }
@@ -68,9 +68,9 @@ final class ModelManager {
         }
     }
 
-    /// Модель считается скачанной, только если на диске лежит не меньше ~80%
-    /// ожидаемого размера. Иначе битые/недокачанные (прерванные) модели
-    /// «притворялись» загруженными, хотя без файлов весов не работают.
+    /// A model counts as downloaded only if at least ~80% of the expected size
+    /// is on disk. Otherwise broken/partially downloaded (interrupted) models
+    /// "pretended" to be installed even though they don't work without the weight files.
     private func isComplete(_ model: ModelDescriptor) -> Bool {
         if model.engine == .fluidAudio {
             return FluidAudioEngine.modelsExist(for: Self.parakeetVersion(for: model.id))
@@ -78,7 +78,7 @@ final class ModelManager {
         let folder = Self.modelFolder(for: model.id)
         let expected = Int64(model.sizeMB) * 1_000_000
         guard expected > 0 else {
-            // Нет ожидаемого размера — откат на старую проверку «папка непустая».
+            // No expected size — fall back to the old "folder is non-empty" check.
             return (try? FileManager.default.contentsOfDirectory(atPath: folder.path).isEmpty == false) ?? false
         }
         return folderSize(folder) >= Int64(Double(expected) * 0.8)
@@ -95,7 +95,7 @@ final class ModelManager {
         return total
     }
 
-    // MARK: - Каталог: скачать / удалить / активировать
+    // MARK: - Catalog: download / delete / activate
 
     func download(_ id: String) {
         guard itemStates[id] == .notDownloaded else { return }
@@ -124,7 +124,7 @@ final class ModelManager {
             } catch is CancellationError {
                 self?.log.info("Скачивание \(id, privacy: .public) отменено")
             } catch {
-                // Отмена URLSession приходит как NSURLErrorCancelled — не считаем ошибкой.
+                // URLSession cancellation arrives as NSURLErrorCancelled — not treated as an error.
                 if (error as NSError).code == NSURLErrorCancelled {
                     self?.log.info("Скачивание \(id, privacy: .public) отменено")
                 } else {
@@ -136,8 +136,8 @@ final class ModelManager {
         }
     }
 
-    /// Отменить загрузку модели. Уже скачанные файлы остаются на диске — при
-    /// повторном «Скачать» загрузка продолжится с недостающих.
+    /// Cancel the model download. Already-downloaded files stay on disk — hitting
+    /// Download again resumes with the missing ones.
     func cancelDownload(_ id: String) {
         downloadTasks[id]?.cancel()
         downloadTasks[id] = nil
@@ -147,10 +147,10 @@ final class ModelManager {
         log.info("Отмена загрузки \(id, privacy: .public)")
     }
 
-    /// Удалить с диска. Если удаляем активную — выгружаем из памяти;
-    /// при следующем использовании она скачается заново.
+    /// Delete from disk. If deleting the active model — unload it from memory;
+    /// it will be re-downloaded on next use.
     func delete(_ id: String) {
-        // Во время скачивания удалять нельзя — файлы пишутся прямо сейчас.
+        // Can't delete while downloading — the files are being written right now.
         if case .downloading = itemStates[id] ?? .notDownloaded { return }
         if id == activeModelID {
             unload()
@@ -163,7 +163,7 @@ final class ModelManager {
         log.info("Модель \(id, privacy: .public) удалена")
     }
 
-    /// Сменить активную: выгрузить старую, сразу прогреть новую.
+    /// Switch the active model: unload the old one, warm up the new one right away.
     func setActive(_ id: String) {
         guard id != activeModelID, catalog.contains(where: { $0.id == id }) else { return }
         unload()
@@ -173,9 +173,9 @@ final class ModelManager {
         Task { await ensureLoaded() }
     }
 
-    // MARK: - Жизненный цикл активной модели в памяти
+    // MARK: - Active model in-memory lifecycle
 
-    /// Загружает активную модель (скачивая при необходимости). Повторные вызовы безопасны.
+    /// Loads the active model (downloading if needed). Repeated calls are safe.
     func ensureLoaded() async {
         if let engine, engine.isLoaded {
             loadState = .ready
@@ -203,8 +203,8 @@ final class ModelManager {
                 }
             }
             loadState = .ready
-            // Активная модель загрузилась — снимаем с неё статус «загрузка».
-            // (refreshDiskStates пропускает записи в состоянии .downloading.)
+            // The active model has loaded — clear its "downloading" status.
+            // (refreshDiskStates skips entries in the .downloading state.)
             itemStates[id] = .downloaded
             refreshDiskStates()
         } catch {
@@ -215,8 +215,8 @@ final class ModelManager {
 
     func transcribe(_ samples: [Float], options: TranscriptionOptions) async throws -> String {
         guard let engine, engine.isLoaded else { throw TranscriptionError.modelNotLoaded }
-        // Настройка перевода могла остаться включённой с другой модели — гасим её,
-        // если активная переводить не умеет (иначе Whisper .en выдаёт мусор).
+        // The translation setting may be left on from another model — turn it off
+        // if the active one can't translate (otherwise Whisper .en produces garbage).
         var options = options
         if activeModel?.canTranslateToEnglish != true {
             options.translateToEnglish = false
@@ -232,7 +232,7 @@ final class ModelManager {
 
     private func makeEngine(for id: String) -> TranscriptionEngine? {
         guard let model = catalog.first(where: { $0.id == id }) else {
-            // Модели нет в каталоге — не падаем, откатываемся на дефолтную.
+            // Model missing from the catalog — don't crash, fall back to the default one.
             return WhisperKitEngine(modelID: Self.defaultModelID)
         }
         switch model.engine {
@@ -243,7 +243,7 @@ final class ModelManager {
         }
     }
 
-    /// Parakeet-модели различаются версией: id с "v3" → v3 (25 языков), иначе v2 (EN).
+    /// Parakeet models differ by version: id containing "v3" → v3 (25 languages), otherwise v2 (EN).
     static func parakeetVersion(for id: String) -> AsrModelVersion {
         id.contains("v3") ? .v3 : .v2
     }

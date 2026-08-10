@@ -1,12 +1,12 @@
 import SwiftUI
 
-/// Окно настроек по макету «Настройки · Новые экраны», карточка «Каркас окна»:
-/// тайтлбар 34px (только traffic lights), сайдбар 198px на общем фоне, контент —
-/// белая панель, «приклеенная» к правому/нижнему краю, со скруглением только
-/// верхнего левого угла. Логотип с версией — внизу сайдбара.
+/// Settings window per the "Settings · New screens" mockup, "Window frame" card:
+/// 34px title bar (traffic lights only), 198px sidebar on the shared background,
+/// content is a white panel "glued" to the right/bottom edges with only the
+/// top-left corner rounded. Logo with version sits at the bottom of the sidebar.
 struct SettingsRootView: View {
     let coordinator: RecordingCoordinator
-    /// Открыть окно нового онбординга (кнопка внизу сайдбара).
+    /// Open the new onboarding window (button at the bottom of the sidebar).
     let openOnboarding: () -> Void
 
     enum Tab: String, CaseIterable {
@@ -35,28 +35,28 @@ struct SettingsRootView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Тайтлбар: пустые 34px под traffic lights, без разделителя —
-            // светофоры лежат на общем фоне окна.
+            // Title bar: empty 34px for the traffic lights, no divider —
+            // the lights sit on the shared window background.
             Color.clear.frame(height: 34)
             HStack(spacing: 0) {
                 sidebar
                 contentPanel
             }
         }
-        // Заполняем весь хостинг-вью и игнорируем safe-area тайтлбара: иначе
-        // .fullSizeContentView добавляет сверху пустую полосу в высоту тайтлбара.
+        // Fill the whole hosting view and ignore the title bar safe area: otherwise
+        // .fullSizeContentView adds an empty strip on top the height of the title bar.
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Tokens.background)
         .ignoresSafeArea()
     }
 
-    // MARK: - Сайдбар
+    // MARK: - Sidebar
 
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 3) {
             tabButton(.dictation)
 
-            // Разделитель между «Диктовкой» и остальными вкладками.
+            // Divider between "Dictation" and the rest of the tabs.
             Rectangle()
                 .fill(Tokens.border)
                 .frame(height: 1)
@@ -69,11 +69,11 @@ struct SettingsRootView: View {
 
             Spacer()
 
-            // Временная кнопка на период разработки нового онбординга.
+            // Temporary button while the new onboarding is in development.
             newOnboardingButton
                 .padding(.bottom, 8)
 
-            // Логотип и версия — внизу, на одной базовой линии.
+            // Logo and version at the bottom, on a shared baseline.
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 HStack(spacing: 0) {
                     Text("v0ca").foregroundStyle(Tokens.text)
@@ -137,11 +137,11 @@ struct SettingsRootView: View {
         .pointerCursor()
     }
 
-    // MARK: - Контент
+    // MARK: - Content
 
-    /// Белая «простыня» контента: рамка сверху и слева, скруглён только верхний
-    /// левый угол; правый и нижний край уходят в край окна. Сверху — фиксированный
-    /// градиент вкладки (контент скроллится поверх него, как в макете).
+    /// White content "sheet": border on top and left, only the top-left corner
+    /// rounded; right and bottom edges run into the window edge. On top sits a
+    /// fixed per-tab gradient (content scrolls over it, as in the mockup).
     private var contentPanel: some View {
         ZStack(alignment: .top) {
             tabGradient
@@ -153,15 +153,15 @@ struct SettingsRootView: View {
             .overlay(
                 UnevenRoundedRectangle(topLeadingRadius: 18)
                     .stroke(Tokens.border, lineWidth: 1)
-                    // Правую и нижнюю кромки уводим за край окна.
+                    // Push the right and bottom edges past the window edge.
                     .padding(.trailing, -1)
                     .padding(.bottom, -1)
             )
             .clipShape(UnevenRoundedRectangle(topLeadingRadius: 18))
     }
 
-    /// Градиенты шапок по вкладкам из макета «Настройки · Новые экраны»
-    /// (у «Моделей» — линейный сине-серый, как на шаге моделей онбординга).
+    /// Per-tab header gradients from the "Settings · New screens" mockup
+    /// (Models gets a linear blue-gray one, like the onboarding models step).
     @ViewBuilder
     private var tabGradient: some View {
         switch tab {
@@ -222,8 +222,8 @@ struct SettingsRootView: View {
             .padding(.top, 22)
             .padding(.bottom, 26)
             .frame(maxWidth: .infinity, alignment: .leading)
-            // Клик по пустому месту / подписи снимает фокус с текстовых полей.
-            // Фоновый слой ловит только «сквозные» клики и не мешает кнопкам.
+            // Clicking empty space / a label dismisses text field focus.
+            // The background layer only catches "pass-through" clicks and doesn't block buttons.
             .background(
                 Color.clear
                     .contentShape(Rectangle())
@@ -236,6 +236,6 @@ struct SettingsRootView: View {
 }
 
 extension Notification.Name {
-    /// Сбросить фокус с текстовых полей настроек (клик вне поля).
+    /// Dismiss focus from settings text fields (click outside a field).
     static let dismissFieldFocus = Notification.Name("v0ca.dismissFieldFocus")
 }

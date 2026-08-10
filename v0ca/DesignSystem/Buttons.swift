@@ -1,14 +1,14 @@
 import SwiftUI
 
-// MARK: - Кнопка (дизайн-система, раздел 06)
+// MARK: - Button (design system, section 06)
 
-/// Варианты кнопок из макета: primary / secondary / ghost / danger-soft / icon.
+/// Button variants from the mockup: primary / secondary / ghost / danger-soft / icon.
 enum DSButtonVariant {
     case primary, secondary, ghost, dangerSoft, icon
 }
 
-/// Кнопка дизайн-системы: высота 36 (compact 28), капсула («Настройки · Новые
-/// экраны» — все кнопки пилюли), живой hover.
+/// Design-system button: 36pt tall (28 compact), capsule shape (per the
+/// "Settings · New screens" mockup all buttons are pills), live hover.
 struct DSButton<Label: View>: View {
     var variant: DSButtonVariant = .secondary
     var compact: Bool = false
@@ -65,14 +65,14 @@ struct DSButton<Label: View>: View {
 }
 
 extension DSButton where Label == Text {
-    /// Текстовая кнопка по строке.
+    /// Text button from a plain string.
     init(_ title: String, variant: DSButtonVariant = .secondary, compact: Bool = false,
          action: @escaping () -> Void) {
         self.init(variant: variant, compact: compact, action: action) { Text(title) }
     }
 }
 
-/// Ширина/паддинг: icon-кнопка квадратная, остальные — по горизонтальному паддингу.
+/// Width/padding: the icon button is square, the rest size by horizontal padding.
 private struct WidthModifier: ViewModifier {
     let width: CGFloat?
     let padding: CGFloat
@@ -85,9 +85,9 @@ private struct WidthModifier: ViewModifier {
     }
 }
 
-/// Компактная иконка-действие 28×28 (карточки истории): без рамки,
-/// hover-подсветка фоном, тултип. Не путать с `DSButton(.icon)` — тот 36×36
-/// с рамкой, для тулбаров.
+/// Compact 28×28 icon action (history cards): borderless,
+/// hover background highlight, tooltip. Not to be confused with `DSButton(.icon)`,
+/// which is 36×36 with a border, for toolbars.
 struct DSIconAction: View {
     let symbol: String
     let help: String

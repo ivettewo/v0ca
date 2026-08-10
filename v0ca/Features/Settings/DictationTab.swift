@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Вкладка «Диктовка» по макету «Настройки · Новые экраны», вкладка 00:
-/// карточка статистики (всего слов / стрик / среднее) + записи за сегодня.
-/// Статистика — из StatsStore (агрегаты по дням, не зависят от подрезаемой истории).
+/// "Dictation" tab per the "Settings · New screens" mockup, tab 00:
+/// stats card (total words / streak / average) + today's records.
+/// Stats come from StatsStore (per-day aggregates, independent of the trimmed history).
 struct DictationTab: View {
     let coordinator: RecordingCoordinator
 
@@ -11,8 +11,8 @@ struct DictationTab: View {
     private var stats: StatsStore { coordinator.stats }
 
     var body: some View {
-        // LazyVStack — как в «Истории»: при длинном списке за сегодня строятся
-        // только видимые строки, иначе скролл лагает.
+        // LazyVStack, same as in History: with a long list for today only
+        // visible rows are built, otherwise scrolling stutters.
         LazyVStack(alignment: .leading, spacing: 22) {
             statsCard
                 .onDisappear { playback.stop() }
@@ -35,7 +35,7 @@ struct DictationTab: View {
         coordinator.history.records.filter { Calendar.current.isDateInToday($0.date) }
     }
 
-    // MARK: - Карточка статистики
+    // MARK: - Stats card
 
     private var statsCard: some View {
         HStack(spacing: 22) {
@@ -70,9 +70,9 @@ struct DictationTab: View {
             .frame(width: 1)
     }
 
-    // MARK: - Форматирование
+    // MARK: - Formatting
 
-    /// От тысячи — компактно с одним знаком: 342.7k (как в макете).
+    /// From 1000 up — compact with one decimal: 342.7k (as in the mockup).
     private static func compact(_ value: Int) -> String {
         guard value >= 1000 else { return "\(value)" }
         let thousands = Double(value) / 1000
@@ -80,7 +80,7 @@ struct DictationTab: View {
         return "\(formatted.hasSuffix(".0") ? String(formatted.dropLast(2)) : formatted)k"
     }
 
-    /// Разряды через пробел: 1 240.
+    /// Space-separated thousands: 1 240.
     private static func grouped(_ value: Int) -> String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal
@@ -88,7 +88,7 @@ struct DictationTab: View {
         return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
     }
 
-    /// «18 дней» с русскими склонениями; в английском просто day/days.
+    /// "18 дней" with Russian plural forms; in English just day/days.
     private func daysLabel(_ count: Int) -> String {
         if AppLanguage.shared.code == .en {
             return count == 1 ? "1 day" : "\(count) days"

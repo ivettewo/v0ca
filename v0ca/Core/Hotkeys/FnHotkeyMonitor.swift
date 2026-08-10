@@ -2,24 +2,24 @@ import AppKit
 import ApplicationServices
 import OSLog
 
-/// Глобальный монитор клавиши fn (🌐 Globe) и Esc-отмены.
+/// Global monitor for the fn key (🌐 Globe) and Esc cancellation.
 ///
-/// Carbon `RegisterEventHotKey` (и библиотека KeyboardShortcuts) не умеют fn:
-/// эта клавиша не даёт keycode, а лишь выставляет флаг `maskSecondaryFn`.
-/// Поэтому, как в приложении handy (крейт `handy-keys`), ловим её низкоуровневым
-/// `CGEventTap` по событиям `.flagsChanged`. Требуется разрешение Accessibility —
-/// то же, что уже нужно v0ca для вставки текста (CGEvent).
+/// Carbon `RegisterEventHotKey` (and the KeyboardShortcuts library) can't handle fn:
+/// the key produces no keycode, it only sets the `maskSecondaryFn` flag.
+/// So, like the handy app (the `handy-keys` crate), we catch it with a low-level
+/// `CGEventTap` on `.flagsChanged` events. Requires the Accessibility permission —
+/// the same one v0ca already needs for text insertion (CGEvent).
 ///
-/// Тот же tap ловит и `keyDown` Esc: Carbon-хоткей отмены зарегистрирован как
-/// «Esc без модификаторов» и не срабатывает, пока в push-to-talk зажата fn/⌥ —
-/// событие приходит как «fn+Esc» и не матчится. Tap же смотрит только на keycode.
+/// The same tap also catches Esc `keyDown`: the Carbon cancel hotkey is registered as
+/// "Esc with no modifiers" and doesn't fire while fn/⌥ is held in push-to-talk —
+/// the event arrives as "fn+Esc" and doesn't match. The tap only looks at the keycode.
 @MainActor
 final class FnHotkeyMonitor {
-    /// fn нажата (флаг появился) и отпущена (флаг пропал).
+    /// fn pressed (flag appeared) and released (flag disappeared).
     var onFnDown: (() -> Void)?
     var onFnUp: (() -> Void)?
-    /// Нажат Esc (с любыми модификаторами). Вернуть `true` — событие обработано
-    /// и проглатывается (не долетит до активного приложения), как Carbon-хоткей.
+    /// Esc pressed (with any modifiers). Return `true` to mark the event handled
+    /// and swallow it (it won't reach the active app), like a Carbon hotkey.
     var onEscape: (() -> Bool)?
 
     private var tap: CFMachPort?
@@ -27,7 +27,7 @@ final class FnHotkeyMonitor {
     private var fnIsDown = false
     private let log = Logger(category: "FnHotkeyMonitor")
 
-    /// Ставит event tap. Идемпотентно; без Accessibility молча ничего не делает.
+    /// Installs the event tap. Idempotent; silently does nothing without Accessibility.
     func start() {
         guard tap == nil else { return }
         guard AXIsProcessTrusted() else {
@@ -39,8 +39,8 @@ final class FnHotkeyMonitor {
             | CGEventMask(1 << CGEventType.keyDown.rawValue)
         let refcon = Unmanaged.passUnretained(self).toOpaque()
 
-        // .defaultTap (а не .listenOnly): Esc-отмену нужно проглатывать,
-        // возвращая nil, — иначе Esc долетит до активного приложения.
+        // .defaultTap (not .listenOnly): the Esc cancellation must be swallowed
+        // by returning nil — otherwise Esc would reach the active app.
         guard let tap = CGEvent.tapCreate(
             tap: .cgSessionEventTap,
             place: .headInsertEventTap,
@@ -50,7 +50,7 @@ final class FnHotkeyMonitor {
                 guard let refcon else { return Unmanaged.passUnretained(event) }
                 let monitor = Unmanaged<FnHotkeyMonitor>.fromOpaque(refcon).takeUnretainedValue()
 
-                // Систему может отключить tap при перегрузке — включаем обратно.
+                // The system may disable the tap under load — re-enable it.
                 if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
                     MainActor.assumeIsolated { monitor.reenable() }
                     return Unmanaged.passUnretained(event)

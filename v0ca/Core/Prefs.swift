@@ -1,6 +1,6 @@
 import Foundation
 
-/// Все пользовательские настройки: ключи UserDefaults + типизированный доступ.
+/// All user preferences: UserDefaults keys + typed accessors.
 enum Prefs {
     enum Key {
         static let translateToEnglish = "translateToEnglish"
@@ -14,20 +14,20 @@ enum Prefs {
         static let soundDone = "soundDone"
         static let historyLimit = "historyLimit"
         static let historyAutoDelete = "historyAutoDelete"
-        /// Клавиша ⌥/Carbon-хоткей не умеет fn — запись триггерится через CGEventTap.
+        /// Carbon hotkeys can't handle the fn key — recording is triggered via CGEventTap.
         static let toggleRecordingUsesFn = "toggleRecordingUsesFn"
-        /// Онбординг завершён (или пропущен): вкладка скрыта и при запуске не открывается.
+        /// Onboarding finished (or skipped): the tab is hidden and doesn't open on launch.
         static let onboardingDone = "onboardingDone"
-        /// Тема оформления (секция «Оформление»). Пока только сохраняется —
-        /// тёмной темы в дизайн-системе ещё нет.
+        /// App theme (the Appearance section). Stored only for now —
+        /// the design system has no dark theme yet.
         static let appTheme = "appTheme"
-        /// Акцентный цвет (hex без #). Пока только сохраняется — Tokens.accent статичен.
+        /// Accent color (hex without #). Stored only for now — Tokens.accent is static.
         static let accentColor = "accentColor"
 
-        // Ключи ниже читаются доменной логикой в своих модулях (AppLanguage,
-        // RecognitionLanguage, ModelManager…) — здесь только строки, чтобы все
-        // ключи UserDefaults жили в одном месте. Строки менять нельзя: это
-        // сбросит сохранённые настройки пользователей.
+        // The keys below are read by domain logic in their own modules (AppLanguage,
+        // RecognitionLanguage, ModelManager…) — only the strings live here so that
+        // all UserDefaults keys stay in one place. Never change the strings: that
+        // would reset users' saved settings.
         static let interfaceLanguage = "interfaceLanguage"
         static let recognitionLanguage = "recognitionLanguage"
         static let inputDeviceUID = "inputDeviceUID"
@@ -43,7 +43,7 @@ enum Prefs {
         case threeMonths
         case off
 
-        /// Ограничение по возрасту записи; nil — ограничение не по возрасту.
+        /// Age limit for records; nil — the limit is not age-based.
         var maxAge: TimeInterval? {
             switch self {
             case .threeDays: 3 * 86_400
@@ -53,7 +53,7 @@ enum Prefs {
             }
         }
 
-        /// Ограничение по количеству записей; nil — ограничение не по количеству.
+        /// Count limit for records; nil — the limit is not count-based.
         var maxCount: Int? {
             switch self {
             case .last5: 5
@@ -87,9 +87,9 @@ enum Prefs {
     }
 
     enum InsertMethod: String, CaseIterable {
-        case paste // буфер + автоматический ⌘V
-        case type // синтетический ввод посимвольно, буфер не трогается
-        case clipboardOnly // только скопировать
+        case paste // clipboard + automatic ⌘V
+        case type // synthetic character-by-character input, clipboard untouched
+        case clipboardOnly // copy only
 
         var label: String {
             switch self {
@@ -101,10 +101,10 @@ enum Prefs {
     }
 
     enum ClipboardHandling: String, CaseIterable {
-        /// «Не изменять» (по умолчанию): после вставки буфер возвращается в исходное
-        /// состояние — транскрипт в нём не остаётся.
+        /// "Keep unchanged" (default): after pasting, the clipboard is restored to its
+        /// original state — the transcript doesn't stay in it.
         case unchanged = "restore"
-        /// Транскрипт остаётся в буфере после вставки.
+        /// The transcript stays in the clipboard after pasting.
         case keepTranscript = "keep"
 
         var label: String {
@@ -117,7 +117,7 @@ enum Prefs {
 
     enum AutoSend: String, CaseIterable {
         case off
-        case enter // нажать Enter после вставки
+        case enter // press Enter after pasting
 
         var label: String {
             switch self {
@@ -168,7 +168,7 @@ enum Prefs {
         UserDefaults.standard.bool(forKey: Key.translateToEnglish)
     }
 
-    /// Пробел после вставленной транскрибации (по умолчанию включено).
+    /// Append a space after the inserted transcript (on by default).
     static var appendSpace: Bool {
         UserDefaults.standard.object(forKey: Key.appendSpace) as? Bool ?? true
     }
@@ -189,22 +189,22 @@ enum Prefs {
         HUDPosition(rawValue: UserDefaults.standard.string(forKey: Key.hudPosition) ?? "") ?? .bottom
     }
 
-    /// Отступ HUD от края экрана (по умолчанию «Небольшой», 56px).
+    /// HUD offset from the screen edge (default "Small", 56px).
     static var hudOffset: HUDOffset {
         HUDOffset(rawValue: UserDefaults.standard.string(forKey: Key.hudOffset) ?? "") ?? .low
     }
 
-    /// Звук начала записи (по умолчанию включён).
+    /// Sound when recording starts (on by default).
     static var soundStart: Bool {
         UserDefaults.standard.object(forKey: Key.soundStart) as? Bool ?? true
     }
 
-    /// Звук завершения (текст готов и вставлен; по умолчанию включён).
+    /// Completion sound (text is ready and inserted; on by default).
     static var soundDone: Bool {
         UserDefaults.standard.object(forKey: Key.soundDone) as? Bool ?? true
     }
 
-    /// Максимум записей истории (по умолчанию 200, как в макете).
+    /// Maximum number of history records (default 200, as in the mockup).
     static var historyLimit: Int {
         UserDefaults.standard.object(forKey: Key.historyLimit) as? Int ?? 200
     }
@@ -213,7 +213,7 @@ enum Prefs {
         HistoryAutoDelete(rawValue: UserDefaults.standard.string(forKey: Key.historyAutoDelete) ?? "") ?? .twoWeeks
     }
 
-    /// Использовать клавишу fn (🌐 Globe) как триггер записи вместо Carbon-хоткея.
+    /// Use the fn key (🌐 Globe) as the recording trigger instead of a Carbon hotkey.
     static var toggleRecordingUsesFn: Bool {
         UserDefaults.standard.bool(forKey: Key.toggleRecordingUsesFn)
     }

@@ -1,13 +1,13 @@
 import AppKit
 import Carbon.HIToolbox
 
-/// Вставка транскрипта в активное приложение: буфер обмена + синтетический ⌘V.
-/// Требует разрешения Accessibility (запрашивается при первой вставке).
+/// Inserts the transcript into the active app: clipboard + synthetic ⌘V.
+/// Requires the Accessibility permission (prompted on first insertion).
 enum TextInserter {
     @MainActor
     static func insert(_ text: String) {
-        // «Печатать без буфера»: текст вводится синтетическими нажатиями,
-        // буфер обмена вообще не участвует.
+        // "Type without clipboard": the text is entered with synthetic keystrokes,
+        // the clipboard is not involved at all.
         if Prefs.insertMethod == .type {
             let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
             guard AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary) else { return }
@@ -22,9 +22,9 @@ enum TextInserter {
 
         let pasteboard = NSPasteboard.general
 
-        // «Не изменять» (по умолчанию): снимаем полную копию содержимого буфера
-        // (любые типы: текст, картинки, файлы) и вернём её после вставки. Пустой буфер
-        // тоже валидное состояние: тогда после вставки просто очистим.
+        // "Keep unchanged" (default): take a full copy of the clipboard contents
+        // (any types: text, images, files) and restore it after pasting. An empty
+        // clipboard is also a valid state: then we just clear it after pasting.
         let savedItems: [NSPasteboardItem]? = Prefs.clipboardHandling == .unchanged
             ? (pasteboard.pasteboardItems ?? []).map { item in
                 let copy = NSPasteboardItem()
@@ -40,11 +40,11 @@ enum TextInserter {
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
 
-        guard Prefs.insertMethod == .paste else { return } // «Только буфер обмена»
+        guard Prefs.insertMethod == .paste else { return } // "Clipboard only"
 
         let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
         guard AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary) else {
-            // Разрешения нет — текст остаётся в буфере, пользователь вставит сам.
+            // No permission — the text stays in the clipboard, the user pastes it manually.
             return
         }
 
@@ -57,7 +57,7 @@ enum TextInserter {
         }
 
         if let savedItems {
-            // Вернуть прежний буфер после того, как ⌘V успел отработать.
+            // Restore the previous clipboard once ⌘V has had time to complete.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 pasteboard.clearContents()
                 if !savedItems.isEmpty {
@@ -67,8 +67,8 @@ enum TextInserter {
         }
     }
 
-    /// Синтетический ввод текста порциями по 20 UTF-16 единиц
-    /// (надёжный максимум для CGEventKeyboardSetUnicodeString).
+    /// Synthetic text input in chunks of 20 UTF-16 units
+    /// (the reliable maximum for CGEventKeyboardSetUnicodeString).
     private static func typeUnicode(_ text: String) {
         let source = CGEventSource(stateID: .combinedSessionState)
         let units = Array(text.utf16)

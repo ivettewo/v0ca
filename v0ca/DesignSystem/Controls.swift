@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Тумблер по макету «Настройки · Новые экраны»: трек 44×26, белая ручка 20px
-/// с тенью, ход 3→21px, анимация 0.18s.
+/// Toggle per the "Settings · New screens" mockup: 44×26 track, white 20px knob
+/// with shadow, travel 3→21px, 0.18s animation.
 struct AccentToggle: View {
     @Binding var isOn: Bool
-    /// Выключённый тумблер не реагирует на клик и показан приглушённым.
+    /// A disabled toggle ignores clicks and is shown dimmed.
     var enabled: Bool = true
 
     var body: some View {
@@ -32,8 +32,8 @@ struct AccentToggle: View {
     }
 }
 
-/// Переключатель-табы: серая капсула-трек, активный сегмент — белая пилюля с тенью.
-/// Для выбора из 2–3 равнозначных вариантов, где дропдаун избыточен.
+/// Tab-style switcher: gray capsule track, active segment is a white pill with shadow.
+/// For choosing between 2–3 equal options where a dropdown would be overkill.
 struct DSSegmentedControl<Value: Hashable>: View {
     let options: [(value: Value, label: String)]
     @Binding var selection: Value
@@ -63,8 +63,8 @@ struct DSSegmentedControl<Value: Hashable>: View {
                 .frame(height: 30)
                 .background {
                     if isSelected {
-                        // raised: в тёмной теме активный сегмент светлее трека,
-                        // а не темнее (surface там темнее surface2).
+                        // raised: in dark theme the active segment is lighter than
+                        // the track, not darker (surface is darker than surface2 there).
                         Capsule()
                             .fill(Tokens.raised)
                             .shadow(color: .black.opacity(0.14), radius: 1.5, y: 1)
@@ -77,8 +77,8 @@ struct DSSegmentedControl<Value: Hashable>: View {
     }
 }
 
-/// Радиокружок (каталог моделей): выбранный — толстое акцентное кольцо 5.5,
-/// иначе тонкое серое 1.5. Сам по себе не кликабелен — клик обрабатывает строка.
+/// Radio circle (model catalog): selected — thick 5.5 accent ring,
+/// otherwise a thin gray 1.5 one. Not clickable itself — the row handles the click.
 struct DSRadio: View {
     let selected: Bool
 

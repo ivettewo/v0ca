@@ -1,28 +1,29 @@
 import SwiftUI
 
-/// Плавающая капсула — по дизайн-системе, вариант «M · 38 px».
+/// Floating capsule — per the design system, "M · 38 px" variant.
 ///
-/// Капсула одна на все состояния и никогда не пересоздаётся: меняется только её
-/// ширина, а содержимое кроссфейдится внутри и обрезается краем (в макете —
-/// `overflow: hidden`). Поэтому переходы читаются как «кружок → раскрылся →
-/// сузился в кружок с галочкой», а не как подмена одной плашки другой.
+/// A single capsule serves all states and is never recreated: only its width
+/// changes, while the content crossfades inside and is clipped by the edge
+/// (`overflow: hidden` in the mockup). That's why transitions read as
+/// "dot → expanded → collapsed into a checkmark circle" rather than one pill
+/// being swapped for another.
 struct HUDView: View {
     let coordinator: RecordingCoordinator
 
-    /// Фаза показа. Отдельная от состояния координатора: в макете запись
-    /// начинается с промежуточного кружка с точкой, который только потом
-    /// раскрывается в полосу с волной.
+    /// Display phase. Separate from the coordinator state: in the mockup,
+    /// recording starts with an intermediate dot circle that only then
+    /// expands into the waveform bar.
     private enum Phase: Equatable {
         case hidden, dot, recording, processing, done
     }
 
     @State private var phase: Phase = .hidden
-    /// Ширина строки «Расшифровка…» — она зависит от языка и от процента загрузки.
+    /// Width of the "Transcribing…" row — it depends on the language and the download percentage.
     @State private var processingWidth: CGFloat = 172
     @State private var checkDrawn = false
     @State private var phaseTask: Task<Void, Never>?
 
-    /// Ширины из макета: 38 / 136 / 172.
+    /// Widths from the mockup: 38 / 136 / 172.
     private var width: CGFloat {
         switch phase {
         case .hidden, .dot, .done: 38
@@ -31,27 +32,27 @@ struct HUDView: View {
         }
     }
 
-    // Пружина без отскока: с bounce капсула перелетает мимо конечной ширины и
-    // возвращается — на глаз это дёрганье, а в момент схлопывания она успевает
-    // стать уже 38px и выглядит яйцом.
+    // Spring with no bounce: with bounce the capsule overshoots the target width
+    // and comes back — it reads as jitter, and during the collapse it briefly gets
+    // narrower than 38px and looks like an egg.
     private let morph = Animation.spring(duration: 0.45, bounce: 0)
     private let crossfade = Animation.easeInOut(duration: 0.26)
 
     var body: some View {
-        // Слои прижаты влево, как inset:0 + flex в макете: точка стоит на месте
-        // (14px от края), а капсула растёт вправо — поэтому точка «уезжает влево»
-        // относительно центра, а крестик выезжает справа.
+        // Layers are pinned to the left, like inset:0 + flex in the mockup: the dot
+        // stays put (14px from the edge) while the capsule grows to the right — so the
+        // dot "drifts left" relative to the center and the cross slides in from the right.
         ZStack(alignment: .leading) {
             layer(dotContent, visible: phase == .dot)
             layer(recordingContent, visible: phase == .recording)
             layer(processingContent, visible: phase == .processing)
-            // Галочка тянется на всю ширину капсулы и центрируется в ней: иначе
-            // при схлопывании она стоит у левого края и уезжает вправо вместе с ним.
+            // The checkmark spans the full capsule width and is centered in it: otherwise
+            // during the collapse it sits at the left edge and slides right along with it.
             layer(doneContent.frame(width: max(38, width), height: 38), visible: phase == .done)
         }
-        // Ширина не меньше высоты — иначе капсула превращается в вертикальное яйцо.
-        // alignment обязателен: содержимое шире капсулы, и без него SwiftUI
-        // центрирует его в кадре — видно середину полосы, а не левый край с точкой.
+        // Width never smaller than the height — otherwise the capsule turns into a vertical egg.
+        // alignment is required: the content is wider than the capsule, and without it SwiftUI
+        // centers it in the frame — you'd see the middle of the bar, not the left edge with the dot.
         .frame(width: max(38, width), height: 38, alignment: .leading)
         .background(Tokens.surface, in: Capsule())
         .overlay(Capsule().strokeBorder(Tokens.border, lineWidth: 1))
@@ -59,8 +60,8 @@ struct HUDView: View {
         .shadow(color: Tokens.shadowHUD.opacity(0.10), radius: 14, y: 6)
         .scaleEffect(phase == .hidden ? 0.55 : 1)
         .opacity(phase == .hidden ? 0 : 1)
-        // Появление и исчезновение — короче морфа ширины, иначе непонятно,
-        // в какой момент капсула уже ушла.
+        // Appear/disappear is shorter than the width morph — otherwise it's unclear
+        // at which point the capsule is already gone.
         .animation(.easeOut(duration: 0.3), value: phase == .hidden)
         .animation(morph, value: phase)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
@@ -70,7 +71,7 @@ struct HUDView: View {
         .onChange(of: coordinator.state) { _, state in sync(to: state) }
     }
 
-    /// Слой содержимого: показан/скрыт прозрачностью, размер не влияет на капсулу.
+    /// Content layer: shown/hidden via opacity; its size doesn't affect the capsule.
     private func layer(_ content: some View, visible: Bool) -> some View {
         content
             .fixedSize()
@@ -79,11 +80,11 @@ struct HUDView: View {
             .allowsHitTesting(visible)
     }
 
-    // MARK: - Содержимое фаз
+    // MARK: - Phase content
 
-    /// Промежуточная фаза старта: кружок с точкой. Точка стоит там же, где потом
-    /// окажется мигающая точка записи (14px от левого края) — поэтому при
-    /// раскрытии она не «перепрыгивает», а остаётся на месте.
+    /// Intermediate start phase: a circle with a dot. The dot sits exactly where the
+    /// blinking recording dot will be (14px from the left edge) — so it doesn't
+    /// "jump" on expansion, it stays in place.
     private var dotContent: some View {
         Circle()
             .fill(Tokens.accent)
@@ -116,7 +117,7 @@ struct HUDView: View {
         .padding(.trailing, 5)
     }
 
-    /// Галочка рисуется штрихом, а не появляется целиком (в макете — vdrawFast).
+    /// The checkmark is stroke-drawn rather than appearing at once (vdrawFast in the mockup).
     private var doneContent: some View {
         CheckmarkShape()
             .trim(from: 0, to: checkDrawn ? 1 : 0)
@@ -125,8 +126,8 @@ struct HUDView: View {
             .frame(width: 38, height: 38)
     }
 
-    /// Невидимая копия строки расшифровки — из неё берём ширину капсулы, чтобы
-    /// текст не обрезался на других языках и на «Модель… 100%».
+    /// Hidden copy of the processing row — the capsule width is taken from it so the
+    /// text doesn't get clipped in other languages or on "Model… 100%".
     private var widthProbe: some View {
         processingContent
             .fixedSize()
@@ -141,13 +142,13 @@ struct HUDView: View {
             }
     }
 
-    // MARK: - Синхронизация с координатором
+    // MARK: - Sync with the coordinator
 
     private func sync(to state: RecordingCoordinator.State) {
         phaseTask?.cancel()
         switch state {
         case .recording:
-            // Из скрытого — сначала кружок, через 0.42s раскрытие (в макете 260→680 мс).
+            // From hidden: dot circle first, then expand after 0.42s (260→680ms in the mockup).
             guard phase == .hidden else { phase = .recording; return }
             phase = .dot
             phaseTask = Task {
@@ -161,7 +162,7 @@ struct HUDView: View {
             phase = .done
             checkDrawn = false
             phaseTask = Task {
-                // Пауза, чтобы штрих пошёл уже по схлопнувшемуся кружку.
+                // Pause so the stroke draws on the already collapsed circle.
                 try? await Task.sleep(for: .milliseconds(140))
                 guard !Task.isCancelled else { return }
                 withAnimation(.easeOut(duration: 0.4)) { checkDrawn = true }
@@ -181,7 +182,7 @@ struct HUDView: View {
         }
     }
 
-    /// Крестик по дизайн-системе: круг 28px #ECECEF, иконка 13px, цвет text2.
+    /// Cancel cross per the design system: 28px #ECECEF circle, 13px icon, text2 color.
     private var cancelButton: some View {
         Button {
             coordinator.cancel()
@@ -197,7 +198,7 @@ struct HUDView: View {
     }
 }
 
-/// Ширина содержимого фазы расшифровки — измеряется скрытой копией.
+/// Width of the processing-phase content — measured via the hidden copy.
 private struct WidthKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
@@ -205,7 +206,7 @@ private struct WidthKey: PreferenceKey {
     }
 }
 
-/// Галочка из макета: viewBox 20×20, путь `M4 10.5 l4 4 l8 -9`.
+/// Checkmark from the mockup: viewBox 20×20, path `M4 10.5 l4 4 l8 -9`.
 private struct CheckmarkShape: Shape {
     func path(in rect: CGRect) -> Path {
         let scale = rect.width / 20
@@ -217,7 +218,7 @@ private struct CheckmarkShape: Shape {
     }
 }
 
-/// Живая волна от голоса: 10 полос 3px (радиус 2, gap 3), высота от уровня микрофона.
+/// Live voice waveform: ten 3px bars (radius 2, gap 3), height driven by the mic level.
 private struct WaveBars: View {
     let level: Float
 
@@ -236,7 +237,7 @@ private struct WaveBars: View {
     }
 }
 
-/// Спиннер по дизайн-системе: кольцо 14px, трек rgba(155,155,163,.28), сегмент #9B9BA3.
+/// Spinner per the design system: 14px ring, rgba(155,155,163,.28) track, #9B9BA3 segment.
 private struct SpinnerRing: View {
     @State private var rotating = false
 

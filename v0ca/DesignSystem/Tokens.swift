@@ -2,102 +2,102 @@ import AppKit
 import CoreText
 import SwiftUI
 
-/// Токены дизайн-системы v0ca — см. docs/DESIGN.md.
-/// Все цвета — динамические пары светлый/тёмный (NSColor dynamicProvider):
-/// AppKit резолвит их под текущую appearance, переключение темы — Theme.apply().
-/// Тёмная палитра подобрана вручную (тёмного макета нет).
+/// v0ca design system tokens — see docs/DESIGN.md.
+/// All colors are dynamic light/dark pairs (NSColor dynamicProvider):
+/// AppKit resolves them against the current appearance; theme switching is Theme.apply().
+/// The dark palette was picked by hand (there is no dark mockup).
 enum Tokens {
-    /// Фирменный Signal Red: точка в «v0ca.» — всегда красная, акценту не подчиняется.
+    /// Brand Signal Red: the dot in "v0ca." is always red, independent of the accent.
     static let brand = Color(hex: 0xE03E3E)
 
-    // Акцент — семья от выбранного в «Оформлении» цвета (AccentStore),
-    // вычисляемые: чтение в body делает вью реактивными к смене акцента.
+    // Accent — a family derived from the color chosen in Appearance (AccentStore);
+    // computed: reading them in body makes views react to accent changes.
     static var accent: Color { family.base }
-    /// Ховер акцентных кнопок и «красный текст» (в тёмной — светлее, не темнее).
+    /// Accent button hover and "red text" (lighter, not darker, in dark theme).
     static var accentHover: Color { family.hover }
     static var accentActive: Color { family.active }
-    /// Мягкий акцент: фон danger-soft кнопок, фокус-ринг полей (accent100).
+    /// Soft accent: danger-soft button background, field focus ring (accent100).
     static var accentSoft: Color { family.soft }
-    /// Ховер danger-soft кнопок (accent300).
+    /// Danger-soft button hover (accent300).
     static var accentSoftHover: Color { family.softHover }
 
     private static var family: AccentFamily {
         AccentFamily.family(for: AccentStore.shared.hex)
     }
 
-    // Семантика
+    // Semantics
     static let processing = Color(hex: 0xE8A13C)
     static let success = Color(hex: 0x3EAF6E)
-    /// Фон бейджа «Разрешено» (онбординг).
+    /// "Granted" badge background (onboarding).
     static let successSoft = dynamic(0xE3F4EA, 0x1F3A2C)
-    /// Текст на successSoft.
+    /// Text on successSoft.
     static let successDeep = dynamic(0x2C7A4E, 0x6ED397)
 
-    // Поверхности и текст
+    // Surfaces and text
     static let background = dynamic(0xF4F4F6, 0x202024)
     static let surface = dynamic(0xFFFFFF, 0x2A2A2F)
     static let surface2 = dynamic(0xEFEFF1, 0x3A3A41)
-    /// Слегка тонированная поверхность: тайтлбар окон, карточки каталога моделей.
+    /// Slightly tinted surface: window title bars, model catalog cards.
     static let surfaceSoft = dynamic(0xFAFAFB, 0x303036)
-    /// Фон строки при наведении (история, диктовка).
+    /// Row background on hover (history, dictation).
     static let surfaceHover = dynamic(0xF7F7F9, 0x33333A)
-    /// Приподнятый элемент на surface2 (активный сегмент переключателя).
+    /// Raised element on surface2 (active segment of the segmented control).
     static let raised = dynamic(0xFFFFFF, 0x4A4A53)
     static let border = dynamic(0xE3E3E7, 0x3C3C43)
-    /// Рамка белых карточек секций (мягче border) — макет «Настройки · Новые экраны».
+    /// Border of white section cards (softer than border) — "Settings · New screens" mockup.
     static let cardBorder = dynamic(0xE7E7EB, 0x3A3A41)
-    /// Рамка контролов-пилюль: дропдауны, поля шорткатов.
+    /// Border of pill controls: dropdowns, shortcut fields.
     static let controlBorder = dynamic(0xDDDDE2, 0x47474F)
-    /// Рамка контролов при ховере и радио-кружок без выбора.
+    /// Control border on hover and the unselected radio circle.
     static let controlBorderHover = dynamic(0xC9C9CF, 0x5A5A64)
-    /// Едва заметная обводка декоративных мокапов.
+    /// Barely visible outline of decorative mockups.
     static let hairline = Color(nsColor: NSColor(name: nil) { appearance in
         appearance.isDark ? NSColor(white: 1, alpha: 0.08) : NSColor(white: 0, alpha: 0.06)
     })
     static let text = dynamic(0x1B1B1F, 0xF2F2F4)
     static let text2 = dynamic(0x6C6C74, 0xA6A6AE)
     static let text3 = dynamic(0x9B9BA3, 0x73737C)
-    /// Усиленный мелкий текст метаданных (языки/размер модели).
+    /// Emphasized small metadata text (model languages/size).
     static let textMeta = dynamic(0x4A4A52, 0xC8C8CE)
-    /// Текст и иконки на акцентных заливках (кнопки, полоса загрузки).
+    /// Text and icons on accent fills (buttons, download bar).
     static let textOnAccent = Color.white
-    /// Ручка тумблера.
+    /// Toggle knob.
     static let knob = Color.white
 
-    // Декор
-    /// Скелетоны-строки в мокапах онбординга.
+    // Decoration
+    /// Skeleton lines in onboarding mockups.
     static let skeleton = dynamic(0xEDEDF0, 0x3C3C42)
-    /// Нижняя кромка клавиш-капов.
+    /// Bottom ledge of keycaps.
     static let keycapLedge = dynamic(0xD6D6DC, 0x1B1B1E)
-    /// Средний цвет шкалы уровня микрофона (между success и processing).
+    /// Middle color of the mic level scale (between success and processing).
     static let levelMid = Color(hex: 0xB4C94A)
 
-    // Тени (цветовая база; прозрачность у мест применения)
+    // Shadows (base colors; opacity is set at the call sites)
     static let shadowCard = dynamic(0x283C6E, 0x000000)
     static let shadowHUD = dynamic(0x182030, 0x000000)
 
-    /// Динамическая пара светлый/тёмный: AppKit выбирает вариант под appearance
-    /// в момент отрисовки. Доступен и HeaderGradients.
+    /// Dynamic light/dark pair: AppKit picks the variant for the current
+    /// appearance at draw time. Also available to HeaderGradients.
     static func dynamic(_ light: UInt32, _ dark: UInt32) -> Color {
         Color(nsColor: NSColor(name: nil) { appearance in
             NSColor(hexValue: appearance.isDark ? dark : light)
         })
     }
 
-    // Радиусы
+    // Radii
     static let radiusControl: CGFloat = 8
-    /// Карточки секций: 18 по макету «Настройки · Новые экраны» (было 12).
+    /// Section cards: 18 per the "Settings · New screens" mockup (was 12).
     static let radiusCard: CGFloat = 18
     static let radiusWindow: CGFloat = 14
 
-    /// Моноширинный: логотип, таймеры, хоткеи, даты. SF Mono — системный,
-    /// в бандле шрифтов нет вообще.
+    /// Monospaced: logo, timers, hotkeys, dates. SF Mono is a system font;
+    /// no monospaced fonts are bundled at all.
     static func mono(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
         .system(size: size, weight: weight, design: .monospaced)
     }
 
-    /// Интерфейсный текст — Google Sans из бандла (как в макетах);
-    /// если файлы не нашлись — системный SF Pro.
+    /// UI text — bundled Google Sans (as in the mockups);
+    /// falls back to system SF Pro if the files are missing.
     static func sans(_ size: CGFloat, weight: Font.Weight = .regular) -> Font {
         guard googleSansRegistered else {
             return .system(size: size, weight: weight)
@@ -110,14 +110,14 @@ enum Tokens {
         return .custom(name, size: size)
     }
 
-    /// Логотип «v0ca.» — Atkinson Hyperlegible Mono (макет «Настройки · Новые
-    /// экраны»), с фолбэком на системный mono.
+    /// The "v0ca." logo — Atkinson Hyperlegible Mono ("Settings · New screens"
+    /// mockup), falling back to the system mono.
     static func logo(_ size: CGFloat) -> Font {
         guard logoRegistered else { return mono(size, weight: .semibold) }
         return .custom("AtkinsonHyperlegibleMono-SemiBold", size: size)
     }
 
-    /// Регистрируем TTF из Resources/Fonts один раз при первом обращении.
+    /// Registers the TTFs from Resources/Fonts once on first access.
     private static let googleSansRegistered: Bool = {
         register(["GoogleSans-Regular", "GoogleSans-Medium", "GoogleSans-SemiBold"])
     }()

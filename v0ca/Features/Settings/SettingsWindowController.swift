@@ -1,14 +1,14 @@
 import AppKit
 import SwiftUI
 
-/// Окно настроек: открывается из меню-бара и по клику на иконку в Доке.
-/// Топ-бар рисуется внутри SettingsRootView, системный тайтлбар прозрачный.
+/// Settings window: opened from the menu bar and by clicking the Dock icon.
+/// The top bar is drawn inside SettingsRootView; the system title bar is transparent.
 @MainActor
 final class SettingsWindowController {
     private var window: NSWindow?
     private let coordinator: RecordingCoordinator
     private let router = SettingsRouter()
-    /// Открыть окно нового онбординга — назначается в AppDelegate до первого show().
+    /// Opens the new onboarding window — assigned in AppDelegate before the first show().
     var openOnboarding: () -> Void = {}
 
     init(coordinator: RecordingCoordinator) {
@@ -36,8 +36,8 @@ final class SettingsWindowController {
                 openOnboarding: openOnboarding,
                 router: router
             ))
-            // При .fullSizeContentView контент-вью занимает весь фрейм окна —
-            // задаём итоговые 960×640 фреймом (как у окна онбординга).
+            // With .fullSizeContentView the content view fills the whole window frame —
+            // set the final 960×640 via the frame (same as the onboarding window).
             window.setFrame(NSRect(x: 0, y: 0, width: 960, height: 640), display: false)
             window.center()
             self.window = window

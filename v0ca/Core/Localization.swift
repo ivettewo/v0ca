@@ -1,11 +1,11 @@
 import Foundation
 import Observation
 
-/// Язык интерфейса. По умолчанию — язык системы (русская система → русский,
-/// иначе английский); выбор в настройках сохраняется и дальше главнее системы.
-/// Русский — базовый в коде (русские строки служат ключами), перевод берётся из
-/// `L10n.en`. Рантайм-переключение без перезапуска: класс `@Observable`, поэтому
-/// вызов `L()` в теле View делает его реактивным.
+/// Interface language. Defaults to the system language (Russian system → Russian,
+/// English otherwise); the choice made in Settings is saved and overrides the system.
+/// Russian is the base language in code (Russian strings serve as keys), translations
+/// come from `L10n.en`. Runtime switching without a restart: the class is `@Observable`,
+/// so calling `L()` in a View body makes it reactive.
 @MainActor
 @Observable
 final class AppLanguage {
@@ -25,25 +25,25 @@ final class AppLanguage {
            let savedCode = Code(rawValue: saved) {
             code = savedCode
         } else {
-            // Первый запуск (язык ещё не выбирали): берём язык системы —
-            // русская система → русский интерфейс, любая другая → английский.
+            // First launch (no language chosen yet): use the system language —
+            // Russian system → Russian UI, anything else → English.
             let system = Locale.preferredLanguages.first ?? "en"
             code = system.hasPrefix("ru") ? .ru : .en
         }
     }
 }
 
-/// Локализованная строка. Ключ — русский текст. Для русского возвращает как есть.
+/// Localized string. The key is the Russian text. Returned as is for Russian.
 @MainActor
 func L(_ ru: String) -> String {
     guard AppLanguage.shared.code == .en else { return ru }
     return L10n.en[ru] ?? ru
 }
 
-/// Переводы на английский. Ключ — точный русский текст из кода.
+/// English translations. The key is the exact Russian text from the code.
 enum L10n {
     static let en: [String: String] = [
-        // Сайдбар / вкладки
+        // Sidebar / tabs
         "Настройки": "Settings",
         "Диктовка": "Dictation",
         "Онбординг": "Onboarding",
@@ -53,7 +53,7 @@ enum L10n {
         "История": "History",
         "Разрешения": "Permissions",
 
-        // Меню-бар
+        // Menu bar
         "Начать запись": "Start recording",
         "Остановить запись": "Stop recording",
         "Настройки…": "Settings…",
@@ -67,7 +67,7 @@ enum L10n {
         "Ошибка модели": "Model error",
         "Расшифровка…": "Transcribing…",
 
-        // Новый онбординг (окно-визард)
+        // New onboarding (wizard window)
         "Настройка v0ca": "Set up v0ca",
         "Новый онбординг": "New onboarding",
         "Голос — в текст, в любом приложении. Всё распознаётся локально на вашем устройстве. Три шага — и можно говорить.":
@@ -117,7 +117,7 @@ enum L10n {
         "Спасибо, записал — присылай детали": "Thanks, noted — send over the details",
         "Готово": "Done",
 
-        // Онбординг
+        // Onboarding
         "Быстрый старт": "Quick start",
         "Выдать разрешения": "Grant permissions",
         "Микрофон — чтобы записывать голос, Универсальный доступ — чтобы вставлять текст":
@@ -134,7 +134,7 @@ enum L10n {
         "Шаги можно пройти в любом порядке — после завершения вкладка исчезнет.":
             "Steps can be done in any order — the tab disappears once you finish.",
 
-        // Общие — секции и строки
+        // General — sections and rows
         "Запись": "Recording",
         "Нажми и говори": "Push to talk",
         "Запись идёт, пока клавиша удерживается": "Records while the key is held",
@@ -169,7 +169,7 @@ enum L10n {
         "Освобождать память, если модель не используется указанное время":
             "Free memory when the model is idle for the set time",
 
-        // Языки распознавания
+        // Recognition languages
         "Автоопределение": "Auto-detect",
         "Русский": "Russian",
         "Английский": "English",
@@ -180,25 +180,25 @@ enum L10n {
         "Португальский": "Portuguese",
         "Итальянский": "Italian",
 
-        // Prefs — метод вставки
+        // Prefs — insertion method
         "Через буфер (⌘V)": "Via clipboard (⌘V)",
         "Печатать без буфера": "Type without clipboard",
         "Только буфер обмена": "Clipboard only",
-        // Обработка буфера
+        // Clipboard handling
         "Не изменять": "Keep unchanged",
         "Оставлять транскрипт в буфере": "Keep transcript in clipboard",
-        // Автоотправка
+        // Auto-send
         "Выключено": "Off",
         "Enter после вставки": "Enter after insertion",
-        // Положение HUD
+        // HUD position
         "Снизу экрана": "Bottom of the screen",
         "Сверху экрана": "Top of the screen",
-        // Отступ HUD
+        // HUD offset
         "Вплотную к краю": "Flush with the edge",
         "Небольшой": "Small",
         "Средний": "Medium",
         "Большой": "Large",
-        // Выгрузка модели
+        // Model unloading
         "Никогда": "Never",
         "Через 5 минут": "After 5 minutes",
         "Через 10 минут": "After 10 minutes",
@@ -207,7 +207,7 @@ enum L10n {
         "Через 1 час": "After 1 hour",
         "Через 2 часа": "After 2 hours",
 
-        // Модели
+        // Models
         "Поиск модели": "Search models",
         "Все языки": "All languages",
         "Мультиязычные": "Multilingual",
@@ -234,7 +234,7 @@ enum L10n {
         "25 языков (вкл. русский)": "25 languages (incl. Russian)",
         "Ошибка": "Error",
 
-        // Модели — описания из каталога
+        // Models — descriptions from the catalog
         "Сверхбыстрая расшифровка на 25 европейских языках (вкл. русский). Работает на Neural Engine.":
             "Ultra-fast transcription in 25 European languages (incl. Russian). Runs on the Neural Engine.",
         "Сверхбыстрая английская расшифровка, отличная точность. Работает на Neural Engine.":
@@ -281,7 +281,7 @@ enum L10n {
         "Самый быстрый вариант дистиллированного флагмана для английского.":
             "The fastest variant of the distilled flagship for English.",
 
-        // Звук
+        // Sound
         "Выбор микрофона": "Microphone",
         "Устройство": "Device",
         "Системный по умолчанию": "System default",
@@ -294,7 +294,7 @@ enum L10n {
         "Звук завершения": "Sound when finished",
         "Когда текст готов и вставлен": "When the text is ready and inserted",
 
-        // История
+        // History
         "НАСТРОЙКИ": "SETTINGS",
         "Размер истории": "History size",
         "Автоматическое удаление записей": "Automatic record deletion",
@@ -316,13 +316,13 @@ enum L10n {
         "Скопировать": "Copy",
         "В избранное": "Favorite",
         "Транскрибировать заново": "Re-transcribe",
-        // Автоудаление истории
+        // History auto-deletion
         "Последние 5": "Last 5",
         "Через 3 дня": "After 3 days",
         "Через 2 недели": "After 2 weeks",
         "Через 3 месяца": "After 3 months",
 
-        // Разрешения
+        // Permissions
         "Микрофон": "Microphone",
         "Универсальный доступ": "Accessibility",
         "Запись голоса для расшифровки": "Voice recording for transcription",
@@ -340,7 +340,7 @@ enum L10n {
     ]
 }
 
-/// Строки с подстановкой — форматируем по локализованному шаблону.
+/// Strings with substitution — formatted using the localized template.
 @MainActor
 func L(_ ru: String, _ argument: CVarArg) -> String {
     String(format: L(ru), argument)

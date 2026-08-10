@@ -1,10 +1,10 @@
 import AppKit
 import SwiftUI
 
-/// Каталог моделей по макету «Настройки · Новые экраны», вкладка 02:
-/// закреплённая шапка (поиск + фильтр языков + кнопка папки), сверху карточками —
-/// загруженные и рекомендуемые модели, остальные — под разворачиваемым списком.
-/// Чипов и текстовых кнопок больше нет: скачать/удалить/отменить — круглые иконки.
+/// Model catalog per the "Settings · New screens" mockup, tab 02:
+/// pinned header (search + language filter + folder button), downloaded and
+/// recommended models as cards on top, the rest under an expandable list.
+/// No more chips or text buttons: download/delete/cancel are round icons.
 struct ModelsTab: View {
     let models: ModelManager
 
@@ -33,10 +33,10 @@ struct ModelsTab: View {
         }
     }
 
-    // MARK: - Закреплённая шапка
+    // MARK: - Pinned header
 
-    /// Липнет к верху при скролле; белая подложка растянута на паддинги панели,
-    /// чтобы карточки не просвечивали под контролами.
+    /// Sticks to the top while scrolling; the white backdrop extends into the
+    /// panel padding so cards don't show through under the controls.
     private var headerBar: some View {
         HStack(spacing: 10) {
             searchField
@@ -73,14 +73,14 @@ struct ModelsTab: View {
         .overlay(
             Capsule().stroke(searchFocused ? Tokens.accent : Tokens.controlBorder, lineWidth: 1)
         )
-        // Фокус-ринг как у полей дизайн-системы.
+        // Focus ring like the design-system fields.
         .background(Capsule().fill(searchFocused ? Tokens.accentSoft : .clear).padding(-3))
         .textCursor()
         .unfocusOnOutsideClick($searchFocused)
     }
 
-    /// Открыть папку с моделями в Finder — оттуда видно все скачанные модели и
-    /// можно удалить нужные вручную. В макете иконки нет — рисуем в кружочке.
+    /// Open the models folder in Finder — it shows all downloaded models and
+    /// lets you delete them manually. The mockup has no icon — we draw one in a circle.
     private var folderButton: some View {
         CircleIconButton(symbol: "folder", help: L("Открыть папку моделей в Finder")) {
             let folder = HFModelDownloader.repoFolder
@@ -89,9 +89,9 @@ struct ModelsTab: View {
         }
     }
 
-    // MARK: - Каталог
+    // MARK: - Catalog
 
-    /// Поиск или фильтр активны — раскрываем весь список, сворачивалка не работает.
+    /// With search or filter active, the whole list is expanded and the collapse toggle is inert.
     private var filterActive: Bool {
         !searchText.isEmpty || languageFilter != .all
     }
@@ -158,10 +158,10 @@ struct ModelsTab: View {
         }
     }
 
-    // MARK: - Карточки
+    // MARK: - Cards
 
-    /// Отдельная карточка (загруженные и рекомендуемые). Активная — акцентная
-    /// рамка 1.5; клик по загруженной делает её активной.
+    /// Standalone card (downloaded and recommended models). The active one gets
+    /// a 1.5pt accent border; clicking a downloaded card makes it active.
     private func card(_ model: ModelDescriptor) -> some View {
         let state = models.itemStates[model.id] ?? .notDownloaded
         let isActive = models.activeModelID == model.id && state == .downloaded
@@ -187,7 +187,7 @@ struct ModelsTab: View {
         .pointerCursor(active: state == .downloaded && !isActive)
     }
 
-    /// Свёрнутый список «остальных»: единый контейнер, строки через разделители.
+    /// Collapsed list of the "rest": a single container, rows separated by dividers.
     private func restList(_ list: [ModelDescriptor]) -> some View {
         VStack(spacing: 0) {
             ForEach(Array(list.enumerated()), id: \.element.id) { index, model in
@@ -236,7 +236,7 @@ struct ModelsTab: View {
         }
     }
 
-    /// Модель выбрана, но ещё грузится/греется — почему первая диктовка ждёт.
+    /// Model is selected but still downloading/warming up — why the first dictation waits.
     private var preparingIndicator: some View {
         HStack(spacing: 5) {
             ProgressView()
@@ -268,7 +268,7 @@ struct ModelsTab: View {
         .foregroundStyle(Tokens.textMeta)
     }
 
-    /// Полоски «Точность» / «Скорость» (шкала каталога 1–10).
+    /// "Accuracy" / "Speed" bars (catalog scale 1–10).
     private func bars(_ model: ModelDescriptor) -> some View {
         VStack(spacing: 8) {
             bar(L("Точность"), value: model.accuracy)
@@ -294,7 +294,7 @@ struct ModelsTab: View {
         }
     }
 
-    // MARK: - Действия
+    // MARK: - Actions
 
     @ViewBuilder
     private func control(_ model: ModelDescriptor, state: ModelManager.ItemState) -> some View {
@@ -316,8 +316,8 @@ struct ModelsTab: View {
         }
     }
 
-    /// Слот красной полосы прогресса под строкой: высота анимируется 0 ↔ полная,
-    /// появление и скрытие симметричны (паттерн с экрана моделей онбординга).
+    /// Slot for the red progress strip under a row: height animates 0 ↔ full,
+    /// appearance and hiding are symmetric (pattern from the onboarding models screen).
     @ViewBuilder
     private func downloadStripSlot(_ model: ModelDescriptor, state: ModelManager.ItemState, cornerRadius: CGFloat) -> some View {
         let percent: Int? = if case .downloading(let p) = state { p } else { nil }
@@ -358,8 +358,8 @@ struct ModelsTab: View {
         )
     }
 
-    /// Нативное подтверждение удаления модели (NSAlert) — чтобы случайно не стереть
-    /// большую скачанную модель.
+    /// Native model deletion confirmation (NSAlert) — so a large downloaded
+    /// model isn't wiped by accident.
     private func confirmAndDelete(_ model: ModelDescriptor) {
         let alert = NSAlert()
         alert.messageText = L("Удалить модель «%@»?", model.name)
@@ -377,10 +377,10 @@ struct ModelsTab: View {
     }
 }
 
-// MARK: - Круглые кнопки
+// MARK: - Round buttons
 
-/// Круглая кнопка-иконка 36×36 с рамкой; `hoverAccent` — на ховере розовеет
-/// и краснеет (корзина из макета).
+/// Round 36×36 icon button with a border; `hoverAccent` turns it pink
+/// and red on hover (the trash button from the mockup).
 private struct CircleIconButton: View {
     let symbol: String
     let help: String
@@ -414,7 +414,7 @@ private struct CircleIconButton: View {
     }
 }
 
-/// Круглая красная кнопка скачивания 36×36.
+/// Round red 36×36 download button.
 private struct DownloadCircleButton: View {
     let action: () -> Void
     @State private var hovering = false

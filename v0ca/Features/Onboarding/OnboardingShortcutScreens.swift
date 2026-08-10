@@ -1,10 +1,10 @@
 import KeyboardShortcuts
 import SwiftUI
 
-// MARK: - 07B · Кастомные шорткаты
+// MARK: - 07B · Custom shortcuts
 
-/// Интерстишл перед шагом шорткатов: две большие статичные клавиши ⌥ Space,
-/// снизу заголовок. Анимация нажатия из HTML-макета не переносится.
+/// Interstitial before the shortcuts step: two large static ⌥ Space keys,
+/// title at the bottom. The key-press animation from the HTML mockup is not ported.
 struct OnboardingShortcutIntroScreen: View {
     let back: () -> Void
     let next: () -> Void
@@ -47,11 +47,11 @@ struct OnboardingShortcutIntroScreen: View {
     }
 }
 
-// MARK: - 08A/09A · Шорткаты
+// MARK: - 08A/09A · Shortcuts
 
-/// Шаг 3: большие клавиши сверху отражают текущую комбинацию записи и меняются
-/// сразу после переназначения (fn → одна клавиша «fn», как в макете 09A).
-/// Ниже — рабочие поля: комбинация записи, отмена, тумблер «Нажми и говори».
+/// Step 3: the large keys on top reflect the current recording combo and update
+/// right after reassignment (fn → a single "fn" key, as in mockup 09A).
+/// Below are the working fields: recording combo, cancel, and the push-to-talk toggle.
 struct OnboardingShortcutsScreen: View {
     let back: () -> Void
     let next: () -> Void
@@ -162,10 +162,10 @@ struct OnboardingShortcutsScreen: View {
     }
 }
 
-// MARK: - 10A · Финал
+// MARK: - 10A · Final
 
-/// «Всё готово»: статичный мокап вставки текста (скелетоны + строка с курсором),
-/// по центру футера — «Готово», завершающая онбординг.
+/// "All set": a static mock of text insertion (skeletons + a line with a cursor),
+/// with a centered "Done" in the footer that finishes onboarding.
 struct OnboardingFinalScreen: View {
     let finish: () -> Void
 
@@ -204,9 +204,9 @@ struct OnboardingFinalScreen: View {
 
     private let animationStart = Date()
 
-    /// Мокап текста в чужом приложении: серые строки-скелетоны, среди них —
-    /// только что вставленная фраза (всплывает и растворяется, `vriseIn`)
-    /// с мигающим красным курсором (`vblink`, ступенчато).
+    /// Mock of text in another app: gray skeleton lines, and among them the
+    /// just-inserted phrase (rises in and dissolves, `vriseIn`)
+    /// with a blinking red cursor (`vblink`, stepped).
     private var insertionMock: some View {
         VStack(alignment: .leading, spacing: 11) {
             skeleton(width: 132)
@@ -257,7 +257,7 @@ struct OnboardingFinalScreen: View {
             .frame(width: width, height: 10)
     }
 
-    /// Керфреймы `vriseIn`: всплытие с +18px к 14%, видна до 88%, растворение.
+    /// `vriseIn` keyframes: rises from +18px by 14%, visible until 88%, then dissolves.
     private static func riseIn(at time: Double) -> (opacity: Double, offset: Double) {
         let phase = time.truncatingRemainder(dividingBy: 7) / 7
         switch phase {
@@ -273,11 +273,11 @@ struct OnboardingFinalScreen: View {
     }
 }
 
-// MARK: - Большая клавиша
+// MARK: - Large keycap
 
-/// Клавиша-кап из интерстишлов и превью: mono, белый фон, «толстая» нижняя
-/// кромка — как `<kbd>` в макете. `animated` — периодическое «нажатие»
-/// (керфреймы `vkeyTap`: цикл 2.2s, клавиша утапливается к кромке и отпускается).
+/// Keycap from the interstitials and previews: mono, white background, "thick"
+/// bottom ledge — like `<kbd>` in the mockup. `animated` adds a periodic "press"
+/// (`vkeyTap` keyframes: 2.2s cycle, the key sinks to the ledge and releases).
 struct OnboardingKeyCap: View {
     let symbol: String
     let fontSize: CGFloat
@@ -304,7 +304,7 @@ struct OnboardingKeyCap: View {
         }
     }
 
-    /// `press` 0…1: клавиша съезжает вниз до кромки; кромка остаётся на месте.
+    /// `press` 0…1: the key slides down to the ledge; the ledge stays in place.
     private func key(press: Double) -> some View {
         Text(symbol)
             .font(Tokens.mono(fontSize, weight: .medium))
@@ -321,7 +321,7 @@ struct OnboardingKeyCap: View {
             )
     }
 
-    /// Керфреймы `vkeyTap`: нажатие к 10%, держим до 26%, отпускаем к 50%, пауза.
+    /// `vkeyTap` keyframes: press by 10%, hold until 26%, release by 50%, then pause.
     private static func press(at time: Double) -> Double {
         let phase = time.truncatingRemainder(dividingBy: 2.2) / 2.2
         switch phase {

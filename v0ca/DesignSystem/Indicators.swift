@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Чип-капсула (карточки моделей: «Активная», «Рекомендуем»): 11/500, высота 20.
+/// Capsule chip (model cards: "Active", "Recommended"): 11/500, 20pt tall.
 struct DSChip: View {
     let text: String
     var background: Color = Tokens.surface2
@@ -22,11 +22,11 @@ struct DSChip: View {
     }
 }
 
-/// Прогресс-полоска: капсула-трек с заливкой слева. Одна на все места —
-/// точность/скорость моделей, плеер истории, уровень микрофона (градиент).
-/// Анимация — на месте вызова через `.animation(_:value:)`.
+/// Progress bar: capsule track filled from the left. One component for all uses —
+/// model accuracy/speed, history player, mic level (gradient).
+/// Animation is applied at the call site via `.animation(_:value:)`.
 struct DSProgressBar: View {
-    /// Доля заполнения 0…1 (обрезается по краям диапазона).
+    /// Fill fraction 0…1 (clamped to the range).
     let fraction: CGFloat
     var height: CGFloat = 5
     var track: Color = Tokens.surface2

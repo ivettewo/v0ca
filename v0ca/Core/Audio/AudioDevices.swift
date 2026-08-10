@@ -7,8 +7,8 @@ struct AudioInputDevice: Identifiable, Hashable {
     var id: String { uid }
 }
 
-/// Список входных аудиоустройств — через AVCaptureDevice, без ручного CoreAudio.
-/// Ключ выбранного устройства — `Prefs.Key.inputDeviceUID`.
+/// List of audio input devices — via AVCaptureDevice, no manual CoreAudio.
+/// The selected device is keyed by `Prefs.Key.inputDeviceUID`.
 enum AudioDevices {
     static func inputDevices() -> [AudioInputDevice] {
         let discovery = AVCaptureDevice.DiscoverySession(

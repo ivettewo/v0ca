@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Окно нового онбординга по макету «Онбординг · Финальные экраны»: 720×600,
-/// фиксированный размер, свой тайтлбар (системный прозрачный, как в настройках).
+/// Window for the new onboarding per the "Onboarding · Final screens" mockup:
+/// 720×600, fixed size, custom title bar (transparent system one, as in settings).
 @MainActor
 final class OnboardingWindowController {
     private var window: NSWindow?
@@ -28,9 +28,10 @@ final class OnboardingWindowController {
             window.contentView = NSHostingView(rootView: OnboardingView(models: models) { [weak self] in
                 self?.window?.close()
             })
-            // При .fullSizeContentView контент-вью занимает весь фрейм окна,
-            // включая тайтлбар: задаём итоговые 720×600 фреймом, а не contentRect,
-            // иначе окно выходит на высоту тайтлбара выше макета.
+            // With .fullSizeContentView the content view fills the entire window
+            // frame, title bar included: set the final 720×600 via the frame, not
+            // contentRect — otherwise the window ends up taller than the mockup
+            // by the title bar height.
             window.setFrame(NSRect(x: 0, y: 0, width: 720, height: 600), display: false)
             window.center()
             self.window = window

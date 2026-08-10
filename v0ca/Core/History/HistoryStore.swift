@@ -2,12 +2,12 @@ import Foundation
 import Observation
 import OSLog
 
-/// История записей: метаданные в history.json, аудио — WAV-файлы рядом.
-/// Лимит размера и автоудаление по возрасту — из настроек.
+/// Recording history: metadata in history.json, audio as WAV files next to it.
+/// Size limit and age-based auto-delete come from settings.
 @MainActor
 @Observable
 final class HistoryStore {
-    private(set) var records: [HistoryRecord] = [] // новые сверху
+    private(set) var records: [HistoryRecord] = [] // newest first
 
     @ObservationIgnored private let log = Logger(category: "HistoryStore")
 
@@ -34,7 +34,7 @@ final class HistoryStore {
         Self.recordingsFolder.appendingPathComponent(record.fileName)
     }
 
-    // MARK: - Операции
+    // MARK: - Operations
 
     func add(samples: [Float], text: String) {
         let record = HistoryRecord(
@@ -79,9 +79,9 @@ final class HistoryStore {
         try WavFile.read(from: audioURL(for: record))
     }
 
-    // MARK: - Лимиты
+    // MARK: - Limits
 
-    /// Лимит количества + автоудаление по возрасту. Избранное не трогаем.
+    /// Count limit + age-based auto-delete. Favorites are left alone.
     func enforceLimits() {
         var removed: [HistoryRecord] = []
 
@@ -91,8 +91,8 @@ final class HistoryStore {
             removed.append(contentsOf: expired)
         }
 
-        // Лимит количества: минимум из «Размера истории» и политики автоудаления
-        // (например, «Последние 5»). Избранное не трогаем.
+        // Count limit: the minimum of "History size" and the auto-delete policy
+        // (e.g. "Last 5"). Favorites are left alone.
         var limit = max(1, Prefs.historyLimit)
         if let policyCount = Prefs.historyAutoDelete.maxCount {
             limit = min(limit, policyCount)
@@ -112,7 +112,7 @@ final class HistoryStore {
         log.info("История: удалено \(removed.count) старых записей")
     }
 
-    // MARK: - Диск
+    // MARK: - Disk
 
     private func load() {
         guard let data = try? Data(contentsOf: Self.indexURL) else { return }

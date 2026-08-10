@@ -2,14 +2,14 @@ import AppKit
 import Observation
 import SwiftUI
 
-/// Выбранный акцентный цвет (секция «Оформление»). @Observable — чтение в body
-/// делает вью реактивными: смена цвета мгновенно перекрашивает интерфейс,
-/// тем же механизмом, что смена языка (AppLanguage) и темы.
+/// The selected accent color (Appearance section). @Observable — reading it in body
+/// makes views reactive: changing the color instantly recolors the UI,
+/// via the same mechanism as language (AppLanguage) and theme switching.
 @Observable
 final class AccentStore {
     static let shared = AccentStore()
 
-    /// Hex базового цвета без # (из палитры GeneralTab).
+    /// Base color hex without # (from the GeneralTab palette).
     var hex: String {
         didSet { UserDefaults.standard.set(hex, forKey: Prefs.Key.accentColor) }
     }
@@ -19,10 +19,10 @@ final class AccentStore {
     }
 }
 
-/// Семья акцентных цветов, сгенерированная от одного базового: hover/active/soft
-/// строятся HSB-формулами, откалиброванными по эталонной красной семье
-/// (сгенерированная красная совпадает с исторической вручную подобранной).
-/// Каждый цвет — динамическая пара светлый/тёмный.
+/// Accent color family generated from a single base color: hover/active/soft
+/// are derived via HSB formulas calibrated against the reference red family
+/// (the generated red matches the original hand-picked one).
+/// Each color is a dynamic light/dark pair.
 struct AccentFamily {
     let base: Color
     let hover: Color
@@ -46,12 +46,12 @@ struct AccentFamily {
         NSColor(hexValue: hex).usingColorSpace(.sRGB)?
             .getHue(&h, saturation: &s, brightness: &b, alpha: nil)
 
-        // Базовый одинаков в обеих темах (как исторический Signal Red).
+        // The base color is the same in both themes (like the original Signal Red).
         base = Self.dyn(h, light: (s, b), dark: (s, b))
-        // Ховер: в светлой чуть темнее, в тёмной — чуть светлее (текст на тёмном).
+        // Hover: slightly darker in light theme, slightly lighter in dark (text on dark).
         hover = Self.dyn(h, light: (min(1, s * 1.04), b * 0.90), dark: (s * 0.88, min(1, b * 1.04)))
         active = Self.dyn(h, light: (min(1, s * 1.07), b * 0.75), dark: (s * 0.99, b * 0.93))
-        // Soft: пастельный фон выделений; в тёмной — глубокий приглушённый.
+        // Soft: pastel selection background; deep and muted in dark theme.
         soft = Self.dyn(h, light: (max(0.05, s * 0.09), 0.99), dark: (s * 0.55, 0.245))
         softHover = Self.dyn(h, light: (s * 0.35, 0.96), dark: (s * 0.6, 0.35))
     }

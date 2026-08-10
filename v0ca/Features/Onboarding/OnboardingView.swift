@@ -1,8 +1,8 @@
 import SwiftUI
 
-/// Контейнер онбординга: тайтлбар 44px, контент, футер 64px — как в макете.
-/// Каждый экран сам собирает свой футер через `OnboardingFooter` (состояние
-/// кнопки «Далее» зависит от экрана — например, от выданных разрешений).
+/// Onboarding container: 44px title bar, content, 64px footer — as in the mockup.
+/// Each screen builds its own footer via `OnboardingFooter` (the "Next" button's
+/// state depends on the screen — e.g. on granted permissions).
 struct OnboardingView: View {
     enum Step: Int, CaseIterable {
         case intro
@@ -19,8 +19,8 @@ struct OnboardingView: View {
     let models: ModelManager
     let close: () -> Void
 
-    /// `step` — стартовый экран; кроме обычного запуска используется
-    /// отладочным рендером скриншотов (OnboardingScreenshots).
+    /// `step` is the starting screen; besides the normal launch it's used by the
+    /// debug screenshot renderer (OnboardingScreenshots).
     init(models: ModelManager, step: Step = .intro, close: @escaping () -> Void) {
         self.models = models
         self.close = close
@@ -72,9 +72,9 @@ struct OnboardingView: View {
         }
     }
 
-    /// «Готово» на финальном экране: помечаем онбординг пройденным (снимает
-    /// блокировку записи, скрывает старую вкладку и автопоказ при запуске),
-    /// греем выбранную модель — к первому хоткею она уже в памяти — и закрываем окно.
+    /// "Done" on the final screen: mark onboarding as complete (unblocks recording,
+    /// hides the old tab and the auto-show on launch), warm up the selected model —
+    /// it's already in memory by the first hotkey — and close the window.
     private func finish() {
         UserDefaults.standard.set(true, forKey: Prefs.Key.onboardingDone)
         Task { await models.ensureLoaded() }
@@ -88,20 +88,20 @@ struct OnboardingView: View {
     }
 }
 
-// MARK: - Градиент шапки
+// MARK: - Header gradient
 
-/// Фоновый градиент верхней части экрана: три размытых радиальных пятна
-/// (слева, по центру, справа) с опциональным белым затуханием вниз.
+/// Background gradient of the screen's top area: three blurred radial spots
+/// (left, center, right) with an optional white fade toward the bottom.
 struct OnboardingGradient: View {
     let left: Color
     let center: Color
     let right: Color
     var height: CGFloat = 400
-    /// Доли высоты, между которыми фон уходит в белый; nil — без затухания
-    /// (экран сам перекрывает низ белым блоком).
+    /// Height fractions between which the background fades to white; nil — no fade
+    /// (the screen covers the bottom with a white block itself).
     var fade: (from: CGFloat, to: CGFloat)?
 
-    /// Основной способ создания — по пресету из HeaderGradients.
+    /// Primary way to create one — from a HeaderGradients preset.
     init(_ preset: HeaderGradient.Triple, height: CGFloat = 400, fade: (from: CGFloat, to: CGFloat)?) {
         left = preset.left
         center = preset.center
@@ -111,8 +111,8 @@ struct OnboardingGradient: View {
     }
 
     var body: some View {
-        // Без .blur: радиальные градиенты и так плавные, а блюр сэмплирует
-        // за краями вью и оставляет грязные полосы-артефакты по периметру.
+        // No .blur: the radial gradients are already smooth, and blur samples
+        // beyond the view edges, leaving dirty band artifacts around the perimeter.
         ZStack {
             spot(center, at: UnitPoint(x: 0.5, y: 0), radius: 0.68)
             spot(right, at: UnitPoint(x: 0.88, y: 0.02), radius: 0.6)
@@ -145,12 +145,12 @@ struct OnboardingGradient: View {
     }
 }
 
-// MARK: - Футер
+// MARK: - Footer
 
-/// Нижняя полоса 64px: «Назад» слева, точки прогресса по центру, действия справа.
-/// Без `page` и `back` (интро, финал) — единственная кнопка по центру.
+/// 64px bottom bar: "Back" on the left, progress dots in the center, actions on
+/// the right. Without `page` and `back` (intro, final) — a single centered button.
 struct OnboardingFooter<Trailing: View>: View {
-    /// Активная точка прогресса (0-based из `pages`); nil — точки не показываются.
+    /// Active progress dot (0-based out of `pages`); nil — dots are hidden.
     var page: Int?
     var pages: Int = 5
     var back: (() -> Void)?
@@ -196,10 +196,10 @@ struct OnboardingFooter<Trailing: View>: View {
     }
 }
 
-// MARK: - Кнопка-пилюля
+// MARK: - Pill button
 
-/// Кнопки онбординга — капсулы (радиус 100 в макете), в отличие от радиуса 8
-/// у DSButton в настройках. Логика вариантов и ховера повторяет DSButton.
+/// Onboarding buttons are capsules (radius 100 in the mockup), unlike the radius-8
+/// DSButton in settings. Variant and hover logic mirrors DSButton.
 struct OnboardingPillButton<Icon: View>: View {
     let title: String
     var variant: DSButtonVariant = .secondary
@@ -260,7 +260,7 @@ extension OnboardingPillButton where Icon == EmptyView {
     }
 }
 
-/// Неактивная «Далее»: серый текст на сером фоне, клик игнорируется (макет 02A).
+/// Disabled "Next": gray text on a gray background, clicks are ignored (mockup 02A).
 struct OnboardingDisabledPill: View {
     let title: String
 

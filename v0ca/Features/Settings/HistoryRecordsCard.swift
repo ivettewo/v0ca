@@ -1,18 +1,18 @@
 import AppKit
 import SwiftUI
 
-/// Карточка со строками записей (общая для «Истории» и «Диктовки»): табличные
-/// строки время/текст/действия, действия видны только при наведении, ховер
-/// подсвечивает строку во всю ширину. Плеер передаётся снаружи, чтобы в один
-/// момент играла одна запись на всю вкладку.
+/// Card with record rows (shared by History and Dictation): tabular
+/// time/text/actions rows, actions visible only on hover, hover
+/// highlights the row full-width. The player is passed in from outside so
+/// only one record plays at a time across the whole tab.
 struct HistoryRecordsCard: View {
     let coordinator: RecordingCoordinator
     let records: [HistoryRecord]
     let playback: PlaybackController
 
     var body: some View {
-        // LazyVStack: у «Диктовки» весь день — одна карточка, и без ленивых
-        // строк сотня записей лейаутится разом.
+        // LazyVStack: in Dictation the whole day is a single card, and without
+        // lazy rows a hundred records would lay out at once.
         LazyVStack(spacing: 0) {
             ForEach(Array(records.enumerated()), id: \.element.id) { index, record in
                 if index > 0 {
@@ -27,9 +27,9 @@ struct HistoryRecordsCard: View {
     }
 }
 
-/// Одна строка записи. Отдельная вью с собственным стейтом ховера/копирования:
-/// движение курсора перерисовывает только эту строку, а не всю карточку дня —
-/// иначе скролл большой истории лагает (каждый ховер перестраивал все строки).
+/// A single record row. Separate view with its own hover/copy state:
+/// cursor movement redraws only this row, not the whole day card —
+/// otherwise scrolling a large history stutters (every hover rebuilt all rows).
 private struct HistoryRecordRow: View {
     let coordinator: RecordingCoordinator
     let record: HistoryRecord
@@ -49,8 +49,8 @@ private struct HistoryRecordRow: View {
                 .frame(width: 48, alignment: .leading)
                 .padding(.top, 2)
 
-            // Выделение текста — тяжёлое представление Text; включаем только
-            // у строки под курсором, остальные рисуются лёгким путём.
+            // Text selection makes Text expensive; enable it only for the
+            // row under the cursor, the rest render the cheap way.
             Group {
                 if hovered {
                     recordText.textSelection(.enabled)
@@ -61,7 +61,7 @@ private struct HistoryRecordRow: View {
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Действия — строго при наведении: убрал курсор со строки — скрылись.
+            // Actions strictly on hover: move the cursor off the row and they hide.
             HStack(spacing: 14) {
                 if hovered {
                     actions
@@ -72,8 +72,8 @@ private struct HistoryRecordRow: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 13)
-        // Форма фона явная: без неё система скругляет подсветку «пилюлей»,
-        // а она должна закрывать строку от края до края прямыми углами.
+        // Explicit background shape: without it the system rounds the highlight
+        // into a pill, but it must cover the row edge to edge with square corners.
         .background(Rectangle().fill(hovered ? Tokens.surfaceHover : .clear))
         .onHover { hovered = $0 }
     }
@@ -85,7 +85,7 @@ private struct HistoryRecordRow: View {
             .foregroundStyle(Tokens.text)
     }
 
-    // MARK: - Действия строки
+    // MARK: - Row actions
 
     @ViewBuilder
     private var actions: some View {
@@ -153,8 +153,8 @@ private struct HistoryRecordRow: View {
     }()
 }
 
-/// Иконка-действие строки истории: 16px, серым, на ховере темнеет
-/// (`hoverAccent` — краснеет, для удаления). Без фона и рамки, как в макете.
+/// History row action icon: 16px, gray, darkens on hover
+/// (`hoverAccent` turns it red, for delete). No background or border, as in the mockup.
 private struct HistoryAction: View {
     let symbol: String
     var filled: Bool = false

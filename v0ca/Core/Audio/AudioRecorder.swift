@@ -1,9 +1,9 @@
 import AVFoundation
 import OSLog
 
-/// Пишет микрофон через AVCaptureSession, привязанную к конкретному устройству.
-/// В отличие от AVAudioEngine, НЕ создаёт агрегатное устройство и не трогает выход —
-/// AirPods остаются в стерео, а формат сразу под Whisper: 16 кГц, моно, Float32.
+/// Records the microphone via an AVCaptureSession bound to a specific device.
+/// Unlike AVAudioEngine, it does NOT create an aggregate device and never touches output —
+/// AirPods stay in stereo, and the format is Whisper-ready out of the box: 16 kHz, mono, Float32.
 final class AudioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {
     private let session = AVCaptureSession()
     private let output = AVCaptureAudioDataOutput()
@@ -12,7 +12,7 @@ final class AudioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegat
     private let lock = NSLock()
     private let log = Logger(category: "AudioRecorder")
 
-    /// RMS-уровень для волны HUD, вызывается на главном потоке.
+    /// RMS level for the HUD waveform, called on the main thread.
     var onLevel: ((Float) -> Void)?
 
     private static let whisperSettings: [String: Any] = [
@@ -30,8 +30,8 @@ final class AudioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegat
         case denied
     }
 
-    /// Различает «ещё не спрашивали» (показываем системный запрос) и «отклонено»
-    /// (запрос больше не покажется — только системные настройки).
+    /// Distinguishes "not asked yet" (show the system prompt) from "denied"
+    /// (the prompt won't appear again — System Settings is the only way).
     static func requestMicAccess() async -> MicAccess {
         switch AVCaptureDevice.authorizationStatus(for: .audio) {
         case .authorized:
@@ -43,7 +43,7 @@ final class AudioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegat
         }
     }
 
-    /// Выбранный микрофон (по UID из настроек) или системный по умолчанию.
+    /// The microphone selected in settings (by UID) or the system default.
     static func selectedDevice() -> AVCaptureDevice? {
         let uid = UserDefaults.standard.string(forKey: Prefs.Key.inputDeviceUID) ?? ""
         if !uid.isEmpty, let device = AVCaptureDevice(uniqueID: uid) {

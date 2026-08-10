@@ -2,8 +2,8 @@ import AppKit
 import SwiftUI
 
 extension View {
-    /// Оформление текстового поля по дизайн-системе: рамка + фокус-ринг
-    /// (акцентная рамка `#E03E3E` и розовый ринг `0 0 0 3px #FCEBEB`).
+    /// Design-system text field styling: border + focus ring
+    /// (accent `#E03E3E` border and pink `0 0 0 3px #FCEBEB` ring).
     func dsFieldStyle(focused: Bool, radius: CGFloat = Tokens.radiusControl,
                       fill: Color = Tokens.surface) -> some View {
         background(fill, in: RoundedRectangle(cornerRadius: radius))
@@ -18,28 +18,28 @@ extension View {
             )
     }
 
-    /// Фон при наведении (для иконок-действий: hover-подсветка по макету).
+    /// Hover background (for icon actions: hover highlight per the mockup).
     func hoverBackground(_ color: Color, radius: CGFloat = 7) -> some View {
         modifier(HoverBackgroundModifier(color: color, radius: radius))
     }
 
-    /// Курсор-указатель (рука) при наведении — для кликабельных контролов.
+    /// Pointing-hand cursor on hover — for clickable controls.
     func pointerCursor() -> some View {
         modifier(PointerCursorModifier())
     }
 
-    /// Текстовый курсор (I-beam) при наведении — для текстовых полей.
+    /// Text cursor (I-beam) on hover — for text fields.
     func textCursor() -> some View {
         modifier(TextCursorModifier())
     }
 
-    /// Снимает фокус с текстового поля кликом вне его: пока поле в фокусе,
-    /// локальный монитор ловит клики и, если попали не в текст, сбрасывает фокус.
+    /// Unfocuses a text field on outside clicks: while the field is focused,
+    /// a local monitor catches clicks and clears focus if they miss the text.
     func unfocusOnOutsideClick(_ focused: FocusState<Bool>.Binding) -> some View {
         modifier(UnfocusOnOutsideClickModifier(focused: focused))
     }
 
-    /// То же, но только когда `active == true` (для элементов, кликабельных условно).
+    /// Same, but only when `active == true` (for conditionally clickable elements).
     @ViewBuilder
     func pointerCursor(active: Bool) -> some View {
         if active {
@@ -62,8 +62,8 @@ private struct HoverBackgroundModifier: ViewModifier {
     }
 }
 
-/// Пушит/попает `NSCursor.pointingHand` строго парно и чистит стек, если вью
-/// исчезает под курсором (иначе курсор «залипает» рукой).
+/// Pushes/pops `NSCursor.pointingHand` in strict pairs and cleans up the stack
+/// if the view disappears under the cursor (otherwise the hand cursor gets stuck).
 private struct PointerCursorModifier: ViewModifier {
     func body(content: Content) -> some View {
         content.modifier(CursorModifier(cursor: .pointingHand))
@@ -102,9 +102,9 @@ private struct CursorModifier: ViewModifier {
     }
 }
 
-/// Пока поле в фокусе, слушает mouseDown: клик, попавший не в текстовое вью
-/// (редактор поля — NSTextView), снимает фокус. Монитор ставится только на время
-/// фокуса и снимается при расфокусе/исчезновении вью.
+/// While the field is focused, listens for mouseDown: a click that lands outside
+/// a text view (the field editor is an NSTextView) clears focus. The monitor is
+/// installed only while focused and removed on unfocus or view disappearance.
 private struct UnfocusOnOutsideClickModifier: ViewModifier {
     var focused: FocusState<Bool>.Binding
     @State private var monitor: Any?

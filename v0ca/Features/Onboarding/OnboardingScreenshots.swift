@@ -1,12 +1,12 @@
 import AppKit
 import SwiftUI
 
-/// Отладочный рендер скриншотов онбординга: запуск приложения с переменной
-/// окружения `V0CA_ONBOARDING_SHOTS=<папка>` рендерит все экраны в PNG
-/// (английский, светлая тема, фирменный красный акцент) и завершает приложение.
-/// Пользовательские настройки языка/акцента восстанавливаются.
-/// Часы анимаций онбординга: в скриншотном режиме время заморожено на
-/// репрезентативной секунде (все элементы видимы), иначе — реальное.
+/// Debug rendering of onboarding screenshots: launching the app with the
+/// `V0CA_ONBOARDING_SHOTS=<folder>` environment variable renders all screens to PNG
+/// (English, light theme, brand red accent) and quits the app.
+/// The user's language/accent settings are restored.
+/// Onboarding animation clock: in screenshot mode time is frozen at a
+/// representative second (all elements visible), otherwise it's real time.
 enum OnboardingClock {
     static let frozen = ProcessInfo.processInfo.environment["V0CA_ONBOARDING_SHOTS"] != nil
 
@@ -49,8 +49,8 @@ enum OnboardingScreenshots {
             .done: "08-final",
         ]
 
-        // Окно не показываем (без orderFront), оно нужно только ради
-        // retina-масштаба бэкинга при cacheDisplay.
+        // The window is never shown (no orderFront); it exists only for the
+        // retina backing scale during cacheDisplay.
         let window = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 720, height: 600),
             styleMask: [.borderless],
@@ -66,7 +66,7 @@ enum OnboardingScreenshots {
             host.frame = NSRect(x: 0, y: 0, width: 720, height: 600)
             window.contentView = host
             host.layoutSubtreeIfNeeded()
-            // Даём ранлупу обработать onAppear-стейт (клавиши превью и т.п.).
+            // Let the run loop process onAppear state (preview keys, etc.).
             RunLoop.main.run(until: Date().addingTimeInterval(0.3))
             host.layoutSubtreeIfNeeded()
             guard let rep = host.bitmapImageRepForCachingDisplay(in: host.bounds) else { continue }

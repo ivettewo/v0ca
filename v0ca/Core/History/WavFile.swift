@@ -1,6 +1,6 @@
 import Foundation
 
-/// Чтение/запись WAV 16 kHz mono 16-bit PCM — формат хранения записей истории.
+/// Read/write WAV 16 kHz mono 16-bit PCM — the storage format for history recordings.
 enum WavFile {
     static let sampleRate = 16_000
 
@@ -35,7 +35,7 @@ enum WavFile {
 
     static func read(from url: URL) throws -> [Float] {
         let data = try Data(contentsOf: url)
-        // ищем чанк "data" (после 12-байтового RIFF-заголовка)
+        // look for the "data" chunk (after the 12-byte RIFF header)
         var offset = 12
         while offset + 8 <= data.count {
             let id = String(bytes: data[offset..<offset + 4], encoding: .ascii) ?? ""

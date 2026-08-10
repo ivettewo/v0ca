@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Borderless-панель поверх всех окон, не забирает фокус у активного приложения —
-/// иначе вставка текста через ⌘V попадёт не туда.
+/// Borderless panel above all windows; never steals focus from the active app —
+/// otherwise the ⌘V paste would land in the wrong place.
 @MainActor
 final class HUDPanelController {
     private let panel: NSPanel
@@ -33,13 +33,13 @@ final class HUDPanelController {
         panel.orderFrontRegardless()
     }
 
-    /// По центру, 112px от ФИЗИЧЕСКОГО края экрана (как в макете: bottom 112px),
-    /// а не от видимой области — иначе капсула висит выше Дока.
+    /// Centered, 112px from the PHYSICAL screen edge (as in the mockup: bottom 112px),
+    /// not from the visible area — otherwise the capsule hangs above the Dock.
     func position() {
         guard let screen = NSScreen.main else { return }
         let frame = screen.frame
         let size = panel.frame.size
-        // Капсула прижата к низу панели с отступом 4 — компенсируем его.
+        // The capsule is pinned to the panel bottom with a 4pt inset — compensate for it.
         let edgeOffset = Prefs.hudOffset.points
         let y: CGFloat = switch Prefs.hudPosition {
         case .bottom: frame.minY + edgeOffset - 4

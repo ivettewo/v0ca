@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Капс-заголовок секции: 11.5/500, разрядка .12em, приглушённый, отступ слева 4.
-/// Капсит сам — передавать можно в любом регистре.
+/// All-caps section header: 11.5/500, .12em letter spacing, muted, 4pt left inset.
+/// Uppercases by itself — pass text in any case.
 struct SectionLabel: View {
     let text: String
 
@@ -18,9 +18,9 @@ struct SectionLabel: View {
     }
 }
 
-/// Секция настроек: заголовок-капс + белая карточка со строками.
-/// Карточка по макету «Настройки · Новые экраны»: радиус 18, рамка cardBorder,
-/// мягкая тень, горизонтальный паддинг 20 — строки и разделители во всю ширину.
+/// Settings section: all-caps header + white card with rows.
+/// Card per the "Settings · New screens" mockup: radius 18, cardBorder stroke,
+/// soft shadow, 20pt horizontal padding — rows and dividers span the full width.
 struct SettingsSection<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
@@ -38,8 +38,8 @@ struct SettingsSection<Content: View>: View {
     }
 }
 
-/// Строка настройки: название (+ описание) слева, контрол справа.
-/// Горизонтальных отступов нет — их даёт карточка секции (паддинг 20).
+/// Settings row: title (+ description) on the left, control on the right.
+/// No horizontal insets of its own — the section card provides them (20pt padding).
 struct SettingRow<Trailing: View>: View {
     let title: String
     var subtitle: String?

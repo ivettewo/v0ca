@@ -33,8 +33,8 @@ private struct MenuContent: View {
                 appDelegate.settingsWindow.show()
             }
         } else {
-            // До завершения онбординга запись выключена и настройки не открываем —
-            // только окно настройки первого запуска.
+            // Until onboarding is done, recording is disabled and settings stay closed —
+            // only the first-run setup window is available.
             Button(L("Продолжить настройку…")) {
                 appDelegate.showOnboarding()
             }
@@ -58,7 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hud: HUDPanelController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
-        // Отладочный рендер скриншотов онбординга — рендерит и завершает приложение.
+        // Debug rendering of onboarding screenshots — renders and quits the app.
         if OnboardingScreenshots.runIfRequested(models: coordinator.models) {
             return
         }
@@ -70,25 +70,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         coordinator.onMicDenied = { [weak self] in
             self?.settingsWindow.show(tab: .permissions)
         }
-        // Первый запуск (метки о пройденном онбординге нет) — только окно
-        // онбординга: запись и настройки недоступны, пока не нажата «Готово».
+        // First launch (no onboarding-done flag) — show only the onboarding
+        // window: recording and settings stay unavailable until "Done" is pressed.
         if !Prefs.onboardingDone {
             onboardingWindow.show()
         }
     }
 
-    /// Открыть окно онбординга (меню-бар до завершения настройки).
+    /// Open the onboarding window (menu bar entry until setup is complete).
     func showOnboarding() {
         onboardingWindow.show()
     }
 
-    /// Возврат в приложение — повторно пробуем поднять fn-монитор (Accessibility
-    /// могли выдать в системных настройках, пока нас не было).
+    /// App became active again — retry starting the fn monitor (Accessibility
+    /// may have been granted in System Settings while we were away).
     func applicationDidBecomeActive(_ notification: Notification) {
         coordinator.startFnMonitorIfNeeded()
     }
 
-    /// Клик по иконке в Доке — открыть настройки (или онбординг, пока не пройден).
+    /// Dock icon click — open settings (or onboarding while it's not finished).
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if Prefs.onboardingDone {
             settingsWindow.show()

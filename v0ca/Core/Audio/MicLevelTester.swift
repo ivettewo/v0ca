@@ -2,8 +2,8 @@ import AVFoundation
 import Observation
 import OSLog
 
-/// Живой индикатор уровня микрофона для вкладки «Звук».
-/// AVCaptureSession, как и запись: без агрегатных устройств и без блокировки UI.
+/// Live microphone level indicator for the Sound tab.
+/// Uses AVCaptureSession, same as recording: no aggregate devices, no UI blocking.
 @MainActor
 @Observable
 final class MicLevelTester: NSObject, AVCaptureAudioDataOutputSampleBufferDelegate {

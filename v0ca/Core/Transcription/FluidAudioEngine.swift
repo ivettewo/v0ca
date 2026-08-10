@@ -2,9 +2,9 @@ import FluidAudio
 import Foundation
 import OSLog
 
-/// Движок Parakeet TDT (FluidAudio) — быстрые CoreML-модели, ~600 МБ.
-/// v2 — английский, v3 — 25 европейских языков (вкл. русский).
-/// Модели качаются самим FluidAudio в `~/Library/Application Support/FluidAudio/Models`.
+/// Parakeet TDT engine (FluidAudio) — fast CoreML models, ~600 MB.
+/// v2 — English, v3 — 25 European languages (incl. Russian).
+/// FluidAudio itself downloads the models into `~/Library/Application Support/FluidAudio/Models`.
 final class FluidAudioEngine: TranscriptionEngine {
     private let version: AsrModelVersion
     private let log = Logger(category: "FluidAudioEngine")
@@ -56,9 +56,9 @@ final class FluidAudioEngine: TranscriptionEngine {
         return result.text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    // MARK: - Загрузка на диск (для ModelManager)
+    // MARK: - Downloading to disk (for ModelManager)
 
-    /// Папка кэша моделей FluidAudio для версии.
+    /// FluidAudio model cache folder for the version.
     static func cacheFolder(for version: AsrModelVersion) -> URL {
         AsrModels.defaultCacheDirectory(for: version)
     }
@@ -67,7 +67,7 @@ final class FluidAudioEngine: TranscriptionEngine {
         AsrModels.modelsExist(at: cacheFolder(for: version))
     }
 
-    /// Скачать модели версии с прогрессом (без загрузки в память).
+    /// Download the version's models with progress (without loading into memory).
     @discardableResult
     static func download(
         version: AsrModelVersion,

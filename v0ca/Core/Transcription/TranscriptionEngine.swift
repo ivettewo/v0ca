@@ -1,23 +1,23 @@
 import Foundation
 
-/// Общий контракт движков транскрибации (WhisperKit, FluidAudio — этап 2).
-/// См. docs/ARCHITECTURE.md.
+/// Common contract for transcription engines (WhisperKit, FluidAudio — stage 2).
+/// See docs/ARCHITECTURE.md.
 protocol TranscriptionEngine: AnyObject {
     var isLoaded: Bool { get }
-    /// Загружает модель в память (скачивая при необходимости). Вызывается при старте приложения
-    /// (модель всегда горячая) и повторно после выгрузки — параллельно с записью голоса.
-    /// `progress`: 0…1 — прогресс скачивания; 1 — скачано, идёт загрузка в память.
+    /// Loads the model into memory (downloading if needed). Called at app startup
+    /// (the model is always hot) and again after unloading — in parallel with voice recording.
+    /// `progress`: 0…1 — download progress; 1 — downloaded, loading into memory.
     func load(progress: @escaping @Sendable (Double) -> Void) async throws
     func unload()
-    /// Аудио: 16 kHz mono Float32.
+    /// Audio: 16 kHz mono Float32.
     func transcribe(_ samples: [Float], options: TranscriptionOptions) async throws -> String
 }
 
 struct TranscriptionOptions {
-    /// ISO-код ("ru", "en"…); nil — автоопределение.
+    /// ISO code ("ru", "en"…); nil — auto-detect.
     let language: String?
-    /// Переводить речь на английский (Whisper task=translate).
-    /// Гасится в `ModelManager`, если активная модель переводить не умеет.
+    /// Translate speech to English (Whisper task=translate).
+    /// Turned off in `ModelManager` if the active model can't translate.
     var translateToEnglish: Bool
 
     static var fromPrefs: TranscriptionOptions {
@@ -32,7 +32,7 @@ enum TranscriptionError: Error {
     case modelNotLoaded
 }
 
-/// Настройка «Язык распознавания». Хранится в UserDefaults: "auto" или ISO-код.
+/// The "Recognition language" setting. Stored in UserDefaults: "auto" or an ISO code.
 enum RecognitionLanguage {
     static var current: String? {
         let value = UserDefaults.standard.string(forKey: Prefs.Key.recognitionLanguage) ?? "auto"

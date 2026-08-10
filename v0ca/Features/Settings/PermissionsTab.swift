@@ -2,7 +2,7 @@ import AVFoundation
 import ApplicationServices
 import SwiftUI
 
-/// Вкладка «Разрешения»: статус Микрофона и Универсального доступа.
+/// "Permissions" tab: status of Microphone and Accessibility.
 struct PermissionsTab: View {
     @State private var micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
     @State private var axGranted = AXIsProcessTrusted()
@@ -29,7 +29,7 @@ struct PermissionsTab: View {
             }
         }
 
-        // Описание под секцией — из макета «Настройки · Новые экраны», 05.
+        // Description under the section — from the "Settings · New screens" mockup, 05.
         VStack(alignment: .leading, spacing: 6) {
             Text(L("Оба разрешения обязательны — без них приложение не сможет работать."))
             Text(L("v0ca работает полностью локально. Разрешения нужны только для записи и вставки текста."))
@@ -44,7 +44,7 @@ struct PermissionsTab: View {
         }
     }
 
-    // MARK: - Микрофон
+    // MARK: - Microphone
 
     private var micSubtitle: String {
         switch micStatus {
@@ -67,14 +67,14 @@ struct PermissionsTab: View {
                 }
             }
         default:
-            // Отклонено: системный запрос больше не покажется — только настройки.
+            // Denied: the system prompt won't show again — Settings is the only way.
             DSButton(L("Открыть настройки")) {
                 openSystemSettings("Privacy_Microphone")
             }
         }
     }
 
-    // MARK: - Универсальный доступ
+    // MARK: - Accessibility
 
     @ViewBuilder
     private var axControl: some View {

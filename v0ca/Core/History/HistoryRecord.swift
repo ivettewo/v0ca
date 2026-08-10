@@ -3,10 +3,10 @@ import Foundation
 struct HistoryRecord: Codable, Identifiable, Equatable {
     let id: UUID
     let date: Date
-    let duration: Double // секунды
+    let duration: Double // seconds
     var text: String
     var favorite: Bool
-    let fileName: String // WAV в папке записей
+    let fileName: String // WAV in the recordings folder
 
     var dateLabel: String {
         Self.dateFormatter.string(from: date)

@@ -3,9 +3,9 @@ import KeyboardShortcuts
 import Observation
 import OSLog
 
-/// Владеет всем циклом: хоткей → запись → транскрибация → вставка.
-/// Стейт-машина HUD: hidden → recording → processing → done → hidden (см. docs/ARCHITECTURE.md).
-/// Жизненный цикл моделей — в ModelManager.
+/// Owns the whole cycle: hotkey → recording → transcription → insertion.
+/// HUD state machine: hidden → recording → processing → done → hidden (see docs/ARCHITECTURE.md).
+/// Model lifecycle lives in ModelManager.
 @MainActor
 @Observable
 final class RecordingCoordinator {
@@ -29,7 +29,7 @@ final class RecordingCoordinator {
     var modelState: ModelManager.LoadState { models.loadState }
 
     @ObservationIgnored var stateDidChange: ((State) -> Void)?
-    /// Разрешение на микрофон отклонено — открыть настройки на вкладке «Разрешения».
+    /// Microphone permission denied — open settings on the Permissions tab.
     @ObservationIgnored var onMicDenied: (() -> Void)?
 
     @ObservationIgnored private let recorder = AudioRecorder()
@@ -42,7 +42,7 @@ final class RecordingCoordinator {
         UserDefaults.standard.bool(forKey: Prefs.Key.pushToTalk)
     }
 
-    /// Минуты бездействия до выгрузки модели; 0 — никогда. По умолчанию 15 (docs/MODELS.md).
+    /// Idle minutes before the model is unloaded; 0 — never. Defaults to 15 (docs/MODELS.md).
     private var unloadAfterMinutes: Int {
         UserDefaults.standard.object(forKey: Prefs.Key.unloadModelAfterMinutes) as? Int ?? 15
     }
@@ -52,7 +52,7 @@ final class RecordingCoordinator {
         self.history = history
         self.stats = stats
 
-        // Push-to-talk: запись идёт, пока клавиша удерживается.
+        // Push-to-talk: recording lasts while the key is held down.
         KeyboardShortcuts.onKeyDown(for: .toggleRecording) { [weak self] in
             guard let self, self.isPushToTalk else { return }
             if self.state == .hidden || self.state == .done {
@@ -74,9 +74,9 @@ final class RecordingCoordinator {
         }
         KeyboardShortcuts.disable(.cancelRecording)
 
-        // Esc через CGEventTap: Carbon-хоткей выше не срабатывает, пока в
-        // push-to-talk зажата fn/⌥ (событие приходит как «fn+Esc»). Tap ловит
-        // Esc с любыми модификаторами; вне записи событие не трогаем.
+        // Esc via CGEventTap: the Carbon hotkey above doesn't fire while fn/⌥ is
+        // held in push-to-talk (the event arrives as "fn+Esc"). The tap catches
+        // Esc with any modifiers; outside of recording the event is left alone.
         fnMonitor.onEscape = { [weak self] in
             guard let self, self.state == .recording || self.state == .processing else {
                 return false
@@ -85,8 +85,8 @@ final class RecordingCoordinator {
             return true
         }
 
-        // Клавиша fn (Carbon её не умеет) — отдельный CGEventTap. Логика та же,
-        // что у toggle-хоткея, но только когда пользователь назначил fn.
+        // The fn key (Carbon can't handle it) — a separate CGEventTap. Same logic
+        // as the toggle hotkey, but only when the user has assigned fn.
         fnMonitor.onFnDown = { [weak self] in
             guard let self, Prefs.toggleRecordingUsesFn, self.isPushToTalk else { return }
             if self.state == .hidden || self.state == .done {
@@ -105,16 +105,16 @@ final class RecordingCoordinator {
         }
         fnMonitor.start()
 
-        // Предзагрузка при старте: к первому нажатию хоткея модель уже горячая
-        // (docs/MODELS.md). До завершения онбординга не греем: ensureLoaded качает
-        // активную модель, а пользователь ещё не выбрал её на шаге моделей.
+        // Preload on startup: the model is already warm by the first hotkey press
+        // (docs/MODELS.md). Don't warm up before onboarding is finished: ensureLoaded
+        // downloads the active model, and the user hasn't picked one on the models step yet.
         if Prefs.onboardingDone {
             Task { await models.ensureLoaded() }
         }
     }
 
-    /// Повторная попытка поднять fn-монитор — на случай, если Accessibility
-    /// выдали уже после запуска приложения. Идемпотентно.
+    /// Retry starting the fn monitor — in case Accessibility was granted
+    /// after the app launched. Idempotent.
     func startFnMonitorIfNeeded() {
         fnMonitor.start()
     }
@@ -142,8 +142,8 @@ final class RecordingCoordinator {
     }
 
     private func start() {
-        // Пока онбординг не завершён, диктовка выключена: единая точка входа
-        // для всех триггеров (хоткей, fn, push-to-talk, меню-бар).
+        // Dictation is disabled until onboarding is finished: single entry point
+        // for all triggers (hotkey, fn, push-to-talk, menu bar).
         guard Prefs.onboardingDone else { return }
         Task {
             guard await AudioRecorder.requestMicAccess() == .granted else {
@@ -160,7 +160,7 @@ final class RecordingCoordinator {
                 state = .recording
                 unloadTimer?.cancel()
                 KeyboardShortcuts.enable(.cancelRecording)
-                // Если модель выгружена/не докачана — греем параллельно с записью.
+                // If the model is unloaded/not fully downloaded — warm it up in parallel with recording.
                 Task { await models.ensureLoaded() }
             } catch {
                 log.error("Не удалось начать запись: \(error)")
@@ -208,7 +208,7 @@ final class RecordingCoordinator {
         }
     }
 
-    /// Перезапускает таймер бездействия. Вызывается после каждой транскрибации.
+    /// Restarts the idle timer. Called after every transcription.
     private func scheduleUnload() {
         unloadTimer?.cancel()
         let minutes = unloadAfterMinutes

@@ -1,8 +1,8 @@
 import AppKit
 
-/// Применение темы оформления: токены — динамические NSColor, поэтому вся
-/// работа сводится к установке appearance приложения. «Системная» (nil)
-/// следует за macOS, включая живое переключение.
+/// Applies the appearance theme: tokens are dynamic NSColors, so all this has
+/// to do is set the app's appearance. "System" (nil) follows macOS,
+/// including live switching.
 enum Theme {
     static func apply() {
         let saved = Prefs.AppTheme(

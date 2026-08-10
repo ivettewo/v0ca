@@ -2,21 +2,21 @@ import AppKit
 import KeyboardShortcuts
 import SwiftUI
 
-/// Поле хоткея — по макету «Экран · Настройки», секция «КОМБИНАЦИИ»:
-/// комбинация показана отдельными клавишами-капами (`<kbd>`: mono 12/500,
-/// рамка с утолщённой нижней кромкой, фон bg2); клик — режим записи
-/// (розовая плашка с пунктиром «Нажмите новую комбинацию…»), Esc — отмена.
-/// Штатный `KeyboardShortcuts.Recorder` в menu-bar-приложении ненадёжно захватывает
-/// клавиши, поэтому ловим событие сами локальным монитором (как в mind-wiki).
+/// Hotkey field per the "Screen · Settings" mockup, "SHORTCUTS" section:
+/// the shortcut is shown as individual key caps (`<kbd>`: mono 12/500,
+/// border with a thicker bottom edge, bg2 background); click enters recording
+/// mode (pink dashed badge "Press a new shortcut…"), Esc cancels.
+/// The stock `KeyboardShortcuts.Recorder` captures keys unreliably in a
+/// menu-bar app, so we catch the event ourselves with a local monitor (like mind-wiki).
 ///
-/// Живёт в Features, а не в DesignSystem: завязан на KeyboardShortcuts и Prefs
-/// (логика fn-хоткея) — дизайн-систему такими зависимостями не нагружаем.
+/// Lives in Features, not DesignSystem: it depends on KeyboardShortcuts and Prefs
+/// (fn-hotkey logic) — we keep such dependencies out of the design system.
 struct ShortcutField: View {
     let name: KeyboardShortcuts.Name
-    /// Ключ UserDefaults «эта комбинация — fn». Если задан, поле умеет ловить fn.
+    /// UserDefaults key for "this shortcut is fn". When set, the field can capture fn.
     var fnPrefKey: String?
-    /// Вызывается после назначения новой комбинации (включая fn) — для внешних
-    /// превью вроде больших клавиш в онбординге.
+    /// Called after a new shortcut is assigned (including fn) — for external
+    /// previews like the large keys in onboarding.
     var onChange: (() -> Void)?
 
     @State private var isRecording = false
@@ -30,8 +30,8 @@ struct ShortcutField: View {
         return UserDefaults.standard.bool(forKey: fnPrefKey)
     }
 
-    /// Капсула 34px — единый вид поля в настройках и онбординге
-    /// (макет «Настройки · Новые экраны»).
+    /// 34px capsule — same field look in settings and onboarding
+    /// ("Settings · New screens" mockup).
     private let height: CGFloat = 34
     private let radius: CGFloat = 17
 
@@ -55,7 +55,7 @@ struct ShortcutField: View {
         .onDisappear(perform: stopRecording)
     }
 
-    /// Покой: капы клавиш, hover подсвечивает рамку и фон.
+    /// Idle: key caps, hover highlights the border and background.
     private var idleLabel: some View {
         HStack(spacing: 6) {
             if keys.isEmpty {
@@ -78,7 +78,7 @@ struct ShortcutField: View {
         )
     }
 
-    /// Запись: розовая плашка, пунктирная акцентная рамка 1.5px (из макета).
+    /// Recording: pink badge, dashed 1.5px accent border (from the mockup).
     private var recordingLabel: some View {
         Text(L("Нажмите новую комбинацию…"))
             .font(Tokens.sans(12))
@@ -93,8 +93,8 @@ struct ShortcutField: View {
             )
     }
 
-    /// Одна клавиша: `<kbd>` из макета — mono 12/500, рамка border с нижней
-    /// кромкой 2px (рамка-подложка со сдвигом вниз), радиус 5, фон bg2.
+    /// A single key: `<kbd>` from the mockup — mono 12/500, border with a 2px
+    /// bottom edge (an underlay border shifted down), radius 5, bg2 background.
     private func keyCap(_ symbol: String) -> some View {
         Text(symbol)
             .font(Tokens.mono(12, weight: .medium))
@@ -106,8 +106,8 @@ struct ShortcutField: View {
             .background(RoundedRectangle(cornerRadius: 5).fill(Tokens.border).offset(y: 1))
     }
 
-    /// Комбинация → отдельные клавиши в каноничном порядке модификаторов ⌃⌥⇧⌘.
-    /// Статичный: онбординг использует его для больших клавиш-превью.
+    /// Shortcut → individual keys in the canonical modifier order ⌃⌥⇧⌘.
+    /// Static: onboarding uses it for the large key previews.
     static func keyParts(_ shortcut: KeyboardShortcuts.Shortcut) -> [String] {
         var parts: [String] = []
         let modifiers = shortcut.modifiers
@@ -117,7 +117,7 @@ struct ShortcutField: View {
         if modifiers.contains(.command) { parts.append("⌘") }
         if let key = shortcut.key {
             let label = KeyboardShortcuts.Shortcut(key, modifiers: []).description
-            // Символы, которые читаются хуже подписи (в макете — «Esc», «Space»).
+            // Symbols that read worse than a label (the mockup uses "Esc", "Space").
             let pretty = ["⎋": "Esc", "␣": "Space", "⇥": "Tab"]
             parts.append(pretty[label] ?? label)
         }
@@ -126,11 +126,11 @@ struct ShortcutField: View {
 
     private func startRecording() {
         isRecording = true
-        // Пока записываем — глушим все глобальные хоткеи, иначе нажатие
-        // сработает как действие (старт записи), а не запишется в поле.
+        // While recording, mute all global hotkeys — otherwise the keypress
+        // fires as an action (start recording) instead of being captured by the field.
         KeyboardShortcuts.isEnabled = false
         keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-            if event.keyCode == 53 { // Esc — отмена записи
+            if event.keyCode == 53 { // Esc — cancel recording
                 stopRecording()
                 return nil
             }
@@ -144,12 +144,12 @@ struct ShortcutField: View {
             }
             return event
         }
-        // fn не даёт keyDown — ловим отдельным монитором flagsChanged (keyCode 63).
+        // fn doesn't produce keyDown — catch it with a separate flagsChanged monitor (keyCode 63).
         guard fnPrefKey != nil else { return }
         flagsMonitor = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
             if event.keyCode == 63, event.modifierFlags.contains(.function) {
                 setFn(true)
-                KeyboardShortcuts.setShortcut(nil, for: name) // fn заменяет Carbon-хоткей
+                KeyboardShortcuts.setShortcut(nil, for: name) // fn replaces the Carbon hotkey
                 refresh()
                 stopRecording()
                 onChange?()

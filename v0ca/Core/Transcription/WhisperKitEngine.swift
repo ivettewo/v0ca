@@ -17,30 +17,30 @@ final class WhisperKitEngine: TranscriptionEngine {
     func load(progress: @escaping @Sendable (Double) -> Void) async throws {
         if whisper != nil { return }
         if let loadTask {
-            // Уже грузится — ждём ту же задачу (ошибку/отмену не пробрасываем,
-            // ниже перепроверим результат и при необходимости начнём заново).
+            // Already loading — await the same task (errors/cancellation are not
+            // rethrown; we re-check the result below and restart if needed).
             _ = try? await loadTask.value
             if whisper != nil { return }
         }
         let task = Task { [modelID, log] in
             log.info("Скачивание/проверка модели \(modelID, privacy: .public)")
-            // Свой загрузчик вместо WhisperKit.download — тот качает побайтово и
-            // потому крайне медленно. Файлы кладутся в ту же папку, что ждёт WhisperKit.
+            // Our own downloader instead of WhisperKit.download — that one downloads
+            // byte by byte and is thus extremely slow. Files go into the same folder WhisperKit expects.
             let folder = try await HFModelDownloader.download(variant: modelID) { fraction in
                 progress(fraction)
             }
             progress(1)
             log.info("Загрузка модели в память из \(folder.path, privacy: .public)")
-            // prewarm: true — Core ML специализирует модель под чип на этапе загрузки,
-            // иначе специализация откладывается до первого инференса (задержка при
-            // первой диктовке). Стоит ~2x времени загрузки, но при старте это ок.
+            // prewarm: true — Core ML specializes the model for the chip at load time,
+            // otherwise specialization is deferred until the first inference (a delay
+            // on the first dictation). Costs ~2x load time, but that's fine at startup.
             let config = WhisperKitConfig(modelFolder: folder.path, prewarm: true)
             let instance = try await WhisperKit(config)
-            // unload() во время загрузки: не «воскрешаем» модель устаревшей задачей.
+            // unload() during loading: don't "resurrect" the model from a stale task.
             try Task.checkCancellation()
-            // Прогрев: один прогон прогревает весь путь энкодер→декодер, чтобы первая
-            // реальная транскрибация не платила за «холодный» инференс. Не тишина —
-            // WhisperKit пропускает пустой звук, поэтому тихий тон 220 Гц (1 с).
+            // Warm-up: a single run warms the whole encoder→decoder path so the first
+            // real transcription doesn't pay for a cold inference. Not silence —
+            // WhisperKit skips empty audio, hence a quiet 220 Hz tone (1 s).
             log.info("Прогрев инференса…")
             var warmOptions = DecodingOptions()
             warmOptions.task = .transcribe
@@ -74,8 +74,8 @@ final class WhisperKitEngine: TranscriptionEngine {
         var options = DecodingOptions()
         options.task = opts.translateToEnglish ? .translate : .transcribe
         options.language = opts.language
-        // Без явного языка Whisper префиллится английским токеном и переводит речь —
-        // поэтому при "auto" обязательно включаем определение языка.
+        // Without an explicit language Whisper prefills the English token and translates
+        // the speech — so with "auto" we must enable language detection.
         options.detectLanguage = (opts.language == nil)
         let results = try await whisper.transcribe(audioArray: samples, decodeOptions: options)
         let text = results
