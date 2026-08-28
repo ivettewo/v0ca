@@ -26,6 +26,14 @@ enum Tokens {
     }
 
     // Semantics
+    /// "This leaves the Mac": the Ask/Screen modes. Deliberately not derived from
+    /// the accent — it carries meaning, and dictation red must stay distinct from it.
+    static let remote = Color(hex: 0x7A5EA8)
+    /// Soft violet for the countdown track and the skeleton shimmer.
+    static let remoteSoft = dynamic(0xEFEBF6, 0x2E2740)
+    /// The "Screen" mode: a whole screenshot leaves the Mac. Blue keeps it apart
+    /// from the violet of a text question — same family of risk, different act.
+    static let capture = Color(hex: 0x55A9CE)
     static let processing = Color(hex: 0xE8A13C)
     static let success = Color(hex: 0x3EAF6E)
     /// "Granted" badge background (onboarding).

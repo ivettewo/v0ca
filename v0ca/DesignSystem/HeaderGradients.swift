@@ -41,6 +41,18 @@ enum HeaderGradient {
         center: Tokens.dynamic(0xF6E1C3, 0x3A2F1D),
         right: Tokens.dynamic(0xFFD3C2, 0x40261C)
     )
+    /// Cyan-blue: Providers tab ("New screens · Providers" mockup).
+    static let providers = Triple(
+        left: Tokens.dynamic(0xB6DDF0, 0x1C3A4C),
+        center: Tokens.dynamic(0xC4DCF0, 0x22364C),
+        right: Tokens.dynamic(0xD2D9EE, 0x282F44)
+    )
+    /// Green-yellow: Stats tab ("New screens · 05 Stats" mockup).
+    static let stats = Triple(
+        left: Tokens.dynamic(0xE8F0E2, 0x28361F),
+        center: Tokens.dynamic(0xF4F0DC, 0x333520),
+        right: Tokens.dynamic(0xFDE8B8, 0x403618)
+    )
     /// Cyan-green: onboarding finale.
     static let final = Triple(
         left: Tokens.dynamic(0x9FE3F7, 0x164050),

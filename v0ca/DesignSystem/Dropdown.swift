@@ -68,16 +68,38 @@ struct DesignDropdown<Value: Hashable>: View {
         guard let rect = anchor?.screenFrame else { return }
         open = true
         panel.onClose = { open = false }
+        // A provider can return dozens of models: the list has to fit between the
+        // control and the edge of our own window, and scroll inside if it doesn't.
+        let bounds = anchor?.window?.frame ?? NSScreen.main?.visibleFrame ?? .zero
+        let margin: CGFloat = 14
+        let spaceBelow = rect.minY - 6 - (bounds.minY + margin)
+        let spaceAbove = (bounds.maxY - margin) - (rect.maxY + 6)
+        let above = spaceBelow < DropdownMetrics.minListHeight && spaceAbove > spaceBelow
+        let room = max(DropdownMetrics.minListHeight, above ? spaceAbove : spaceBelow)
+        let natural = CGFloat(options.count) * DropdownMetrics.rowHeight - 1
         let list = DropdownList(
             options: options,
             selected: selection,
-            width: width
+            width: width,
+            maxHeight: natural > room - DropdownMetrics.cardPadding ? room - DropdownMetrics.cardPadding : nil
         ) { picked in
             selection = picked
             panel.close()
         }
-        panel.show(below: rect, width: width) { AnyView(list) }
+        panel.show(from: rect, width: width, above: above) { AnyView(list) }
     }
+
+}
+
+/// Layout constants of the open list. Free-standing because `DesignDropdown` is
+/// generic, and generic types can't hold static stored properties.
+private enum DropdownMetrics {
+    /// 32pt item + 1pt gap.
+    static let rowHeight: CGFloat = 33
+    /// Card padding, top and bottom.
+    static let cardPadding: CGFloat = 10
+    /// Below this the list is unusable — flip to the other side instead.
+    static let minListHeight: CGFloat = 120
 }
 
 /// Open list: radius-14 card with a soft border, 32px items with radius 9;
@@ -86,9 +108,28 @@ private struct DropdownList<Value: Hashable>: View {
     let options: [(value: Value, label: String)]
     let selected: Value
     let width: CGFloat
+    /// Set when the full list doesn't fit — then the items scroll inside the card.
+    var maxHeight: CGFloat?
     let onPick: (Value) -> Void
 
     var body: some View {
+        Group {
+            if let maxHeight {
+                ScrollView(.vertical, showsIndicators: true) {
+                    items
+                }
+                .frame(height: maxHeight)
+            } else {
+                items
+            }
+        }
+        .padding(5)
+        .frame(width: width)
+        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Tokens.cardBorder, lineWidth: 1))
+    }
+
+    private var items: some View {
         VStack(spacing: 1) {
             ForEach(options, id: \.value) { option in
                 let isSelected = option.value == selected
@@ -120,10 +161,6 @@ private struct DropdownList<Value: Hashable>: View {
                 .pointerCursor()
             }
         }
-        .padding(5)
-        .frame(width: width)
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(Tokens.cardBorder, lineWidth: 1))
     }
 }
 
@@ -159,7 +196,7 @@ final class DropdownPanelController {
     /// Small transparent inset around the card inside the panel (no shadow).
     private let shadowPad: CGFloat = 4
 
-    func show(below anchor: NSRect, width: CGFloat, content: () -> AnyView) {
+    func show(from anchor: NSRect, width: CGFloat, above: Bool = false, content: () -> AnyView) {
         close(fireCallback: false)
 
         let hosting = NSHostingView(rootView: content().padding(shadowPad))
@@ -180,9 +217,12 @@ final class DropdownPanelController {
 
         // The card is right-aligned under the button (the capsule button is
         // narrower than the list and hugs the row's right edge), top 6px below.
+        // Near the bottom of the window it opens upwards instead.
         let origin = NSPoint(
             x: anchor.maxX - size.width + shadowPad,
-            y: anchor.minY - 6 - (size.height - shadowPad)
+            y: above
+                ? anchor.maxY + 6 - shadowPad
+                : anchor.minY - 6 - (size.height - shadowPad)
         )
         panel.setFrameOrigin(origin)
         panel.orderFront(nil)

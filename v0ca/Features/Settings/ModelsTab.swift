@@ -380,41 +380,6 @@ struct ModelsTab: View {
 
 // MARK: - Round buttons
 
-/// Round 36×36 icon button with a border; `hoverAccent` turns it pink
-/// and red on hover (the trash button from the mockup).
-private struct CircleIconButton: View {
-    let symbol: String
-    let help: String
-    var hoverAccent: Bool = false
-    let action: () -> Void
-
-    @State private var hovering = false
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(hovering && hoverAccent ? Tokens.accentHover : Tokens.text2)
-                .frame(width: 36, height: 36)
-                .background(
-                    hovering ? (hoverAccent ? Tokens.accentSoft : Tokens.background) : Tokens.surface,
-                    in: Circle()
-                )
-                .overlay(
-                    Circle().stroke(
-                        hovering && hoverAccent ? Tokens.accentSoftHover : Tokens.controlBorder,
-                        lineWidth: 1
-                    )
-                )
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .pointerCursor()
-        .onHover { hovering = $0 }
-        .help(help)
-    }
-}
-
 /// Round red 36×36 download button.
 private struct DownloadCircleButton: View {
     let action: () -> Void
