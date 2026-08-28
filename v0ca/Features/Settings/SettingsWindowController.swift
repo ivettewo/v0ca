@@ -8,8 +8,6 @@ final class SettingsWindowController {
     private var window: NSWindow?
     private let coordinator: RecordingCoordinator
     private let router = SettingsRouter()
-    /// Opens the new onboarding window — assigned in AppDelegate before the first show().
-    var openOnboarding: () -> Void = {}
 
     init(coordinator: RecordingCoordinator) {
         self.coordinator = coordinator
@@ -33,7 +31,6 @@ final class SettingsWindowController {
             window.backgroundColor = NSColor(Tokens.background)
             window.contentView = NSHostingView(rootView: SettingsRootView(
                 coordinator: coordinator,
-                openOnboarding: openOnboarding,
                 router: router
             ))
             // With .fullSizeContentView the content view fills the whole window frame —

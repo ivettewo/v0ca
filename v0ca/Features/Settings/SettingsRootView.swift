@@ -6,25 +6,27 @@ import SwiftUI
 /// top-left corner rounded. Logo with version sits at the bottom of the sidebar.
 struct SettingsRootView: View {
     let coordinator: RecordingCoordinator
-    /// Open the new onboarding window (button at the bottom of the sidebar).
-    let openOnboarding: () -> Void
 
     enum Tab: String, CaseIterable {
         case dictation = "Диктовка"
         case general = "Общие"
         case models = "Модели"
+        case providers = "Провайдеры"
         case sound = "Звук"
         case history = "История"
         case permissions = "Разрешения"
+        case stats = "Статистика"
 
         var icon: String {
             switch self {
             case .dictation: "mic"
             case .general: "gearshape"
             case .models: "cpu"
+            case .providers: "key"
             case .sound: "speaker.wave.2"
             case .history: "clock.arrow.circlepath"
             case .permissions: "checkmark.shield"
+            case .stats: "chart.bar"
             }
         }
     }
@@ -63,14 +65,15 @@ struct SettingsRootView: View {
                 .padding(.horizontal, 11)
                 .padding(.vertical, 9)
 
-            ForEach(Tab.allCases.filter { $0 != .dictation }, id: \.self) { item in
+            ForEach(Tab.allCases.filter { $0 != .dictation && $0 != .stats }, id: \.self) { item in
                 tabButton(item)
             }
 
             Spacer()
 
-            // Temporary button while the new onboarding is in development.
-            newOnboardingButton
+            // Stats sit apart from the settings tabs, pinned to the bottom of the
+            // sidebar as in the mockup.
+            tabButton(.stats)
                 .padding(.bottom, 8)
 
             // Logo and version at the bottom, on a shared baseline.
@@ -114,26 +117,6 @@ struct SettingsRootView: View {
             .contentShape(RoundedRectangle(cornerRadius: 9))
         }
         .buttonStyle(.plain)
-        .pointerCursor()
-    }
-
-    private var newOnboardingButton: some View {
-        Button(action: openOnboarding) {
-            HStack(spacing: 10) {
-                Image(systemName: "wand.and.stars")
-                    .font(.system(size: 13))
-                    .frame(width: 17)
-                Text(L("Новый онбординг"))
-                    .font(Tokens.sans(13.5))
-                Spacer()
-            }
-            .foregroundStyle(Tokens.text2)
-            .padding(.horizontal, 11)
-            .frame(height: 36)
-            .contentShape(RoundedRectangle(cornerRadius: 9))
-        }
-        .buttonStyle(.plain)
-        .hoverBackground(Tokens.surface2, radius: 9)
         .pointerCursor()
     }
 
@@ -197,10 +180,20 @@ struct SettingsRootView: View {
                 HeaderGradient.permissions,
                 height: 400, fade: (from: 0.16, to: 0.6)
             )
+        case .providers:
+            OnboardingGradient(
+                HeaderGradient.providers,
+                height: 400, fade: (from: 0.14, to: 0.58)
+            )
         case .history:
             OnboardingGradient(
                 HeaderGradient.modelIntro,
                 height: 400, fade: (from: 0.16, to: 0.6)
+            )
+        case .stats:
+            OnboardingGradient(
+                HeaderGradient.stats,
+                height: 400, fade: (from: 0.18, to: 0.62)
             )
         }
     }
@@ -216,6 +209,8 @@ struct SettingsRootView: View {
                 case .sound: SoundTab()
                 case .history: HistoryTab(coordinator: coordinator)
                 case .permissions: PermissionsTab()
+                case .providers: ProvidersTab(keys: coordinator.providerKeys)
+                case .stats: StatsTab(coordinator: coordinator)
                 }
             }
             .padding(.horizontal, 24)
