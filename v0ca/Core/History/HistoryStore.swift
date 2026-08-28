@@ -30,8 +30,8 @@ final class HistoryStore {
         enforceLimits()
     }
 
-    func audioURL(for record: HistoryRecord) -> URL {
-        Self.recordingsFolder.appendingPathComponent(record.fileName)
+    func audioURL(for record: HistoryRecord) -> URL? {
+        record.fileName.map { Self.recordingsFolder.appendingPathComponent($0) }
     }
 
     // MARK: - Operations
@@ -43,10 +43,12 @@ final class HistoryStore {
             duration: Double(samples.count) / Double(WavFile.sampleRate),
             text: text,
             favorite: false,
-            fileName: UUID().uuidString + ".wav"
+            fileName: UUID().uuidString + ".wav",
+            kind: .dictation
         )
         do {
-            try WavFile.write(samples: samples, to: audioURL(for: record))
+            guard let url = audioURL(for: record) else { return }
+            try WavFile.write(samples: samples, to: url)
         } catch {
             log.error("Не удалось сохранить аудио: \(error)")
             return
@@ -56,9 +58,29 @@ final class HistoryStore {
         save()
     }
 
+    /// An answer from a model. No audio and no screenshot on disk: only the
+    /// words. A silent screenshot has no question at all — the row says so itself.
+    func addAnswer(question: String?, answer: String, kind: HistoryRecord.Kind) {
+        let record = HistoryRecord(
+            id: UUID(),
+            date: Date(),
+            duration: 0,
+            text: answer,
+            favorite: false,
+            fileName: nil,
+            kind: kind,
+            question: question
+        )
+        records.insert(record, at: 0)
+        enforceLimits()
+        save()
+    }
+
     func delete(_ id: UUID) {
         guard let record = records.first(where: { $0.id == id }) else { return }
-        try? FileManager.default.removeItem(at: audioURL(for: record))
+        if let url = audioURL(for: record) {
+            try? FileManager.default.removeItem(at: url)
+        }
         records.removeAll { $0.id == id }
         save()
     }
@@ -76,7 +98,8 @@ final class HistoryStore {
     }
 
     func samples(for record: HistoryRecord) throws -> [Float] {
-        try WavFile.read(from: audioURL(for: record))
+        guard let url = audioURL(for: record) else { return [] }
+        return try WavFile.read(from: url)
     }
 
     // MARK: - Limits
@@ -105,7 +128,9 @@ final class HistoryStore {
 
         guard !removed.isEmpty else { return }
         for record in removed {
-            try? FileManager.default.removeItem(at: audioURL(for: record))
+            if let url = audioURL(for: record) {
+                try? FileManager.default.removeItem(at: url)
+            }
         }
         records.removeAll { record in removed.contains(where: { $0.id == record.id }) }
         save()

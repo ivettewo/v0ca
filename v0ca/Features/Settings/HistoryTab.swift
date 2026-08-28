@@ -14,6 +14,34 @@ struct HistoryTab: View {
     @FocusState private var sizeFocused: Bool
 
     @State private var playback = PlaybackController()
+    @State private var filter: Filter = .all
+
+    /// One timeline for everything; the filter only hides rows.
+    private enum Filter: Hashable, CaseIterable {
+        case all, dictation, ask, screen
+
+        var label: String {
+            switch self {
+            case .all: "Всё"
+            case .dictation: "Диктовка"
+            case .ask: "Спросить"
+            case .screen: "Экран"
+            }
+        }
+
+        func matches(_ record: HistoryRecord) -> Bool {
+            switch self {
+            case .all: true
+            case .dictation: record.kind == .dictation
+            case .ask: record.kind == .ask
+            case .screen: record.kind == .screen
+            }
+        }
+    }
+
+    private var visibleRecords: [HistoryRecord] {
+        store.records.filter { filter.matches($0) }
+    }
 
     private var store: HistoryStore { coordinator.history }
 
@@ -23,7 +51,15 @@ struct HistoryTab: View {
         LazyVStack(alignment: .leading, spacing: 22) {
             settingsCard
 
-            if store.records.isEmpty {
+            // Only worth showing once there is something to sort through.
+            if store.records.contains(where: { $0.kind != .dictation }) {
+                DSSegmentedControl(
+                    options: Filter.allCases.map { (value: $0, label: L($0.label)) },
+                    selection: $filter
+                )
+            }
+
+            if visibleRecords.isEmpty {
                 Text(L("Записей пока нет — продиктуйте что-нибудь."))
                     .font(Tokens.sans(12))
                     .foregroundStyle(Tokens.text3)
@@ -91,7 +127,7 @@ struct HistoryTab: View {
 
     private var groupedByDay: [(day: Date, records: [HistoryRecord])] {
         let calendar = Calendar.current
-        let groups = Dictionary(grouping: store.records) { calendar.startOfDay(for: $0.date) }
+        let groups = Dictionary(grouping: visibleRecords) { calendar.startOfDay(for: $0.date) }
         return groups.keys.sorted(by: >).map { day in
             (day: day, records: groups[day] ?? [])
         }

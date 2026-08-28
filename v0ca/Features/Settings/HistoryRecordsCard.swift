@@ -78,25 +78,86 @@ private struct HistoryRecordRow: View {
         .onHover { hovered = $0 }
     }
 
+    /// A dictation is just its text. An answer from a model gets what was asked
+    /// above it: the spoken question in a tinted bubble, or — for a screenshot
+    /// sent in silence — a plain label, because the picture itself was never kept.
+    @ViewBuilder
     private var recordText: some View {
+        if record.kind == .dictation {
+            answerText
+        } else {
+            VStack(alignment: .leading, spacing: 7) {
+                if let question = record.question, !question.isEmpty {
+                    questionBubble(question)
+                } else if record.kind == .screen {
+                    screenshotLabel
+                }
+                answerText
+            }
+        }
+    }
+
+    private var answerText: some View {
         Text(record.text)
             .font(Tokens.sans(13.5))
             .lineSpacing(4)
             .foregroundStyle(Tokens.text)
     }
 
+    /// Speech bubble with the tail on the top left, as in the mockup.
+    private func questionBubble(_ question: String) -> some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: record.kind == .screen ? "display" : "bubble.left")
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(tint)
+                .padding(.top, 2)
+            Text(question)
+                .font(Tokens.sans(13))
+                .lineSpacing(3)
+                .foregroundStyle(Tokens.text)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 4, bottomLeadingRadius: 14,
+                bottomTrailingRadius: 14, topTrailingRadius: 14
+            )
+            .fill(tint.opacity(0.12))
+        )
+    }
+
+    /// Not a button and not a link: there is no screenshot to open.
+    private var screenshotLabel: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "display")
+                .font(.system(size: 11, weight: .medium))
+            Text(L("Снимок экрана"))
+                .font(Tokens.sans(12.5, weight: .medium))
+        }
+        .foregroundStyle(tint)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(
+            UnevenRoundedRectangle(
+                topLeadingRadius: 4, bottomLeadingRadius: 14,
+                bottomTrailingRadius: 14, topTrailingRadius: 14
+            )
+            .fill(tint.opacity(0.12))
+        )
+    }
+
+    private var tint: Color {
+        record.kind == .screen ? Tokens.capture : Tokens.remote
+    }
+
     // MARK: - Row actions
 
     @ViewBuilder
     private var actions: some View {
-        HistoryAction(
-            symbol: playback.isPlaying(record.id) ? "pause.fill" : "play.fill",
-            filled: true,
-            help: playback.isPlaying(record.id) ? L("Стоп") : L("Воспроизвести")
-        ) {
-            playback.toggle(record.id, url: store.audioURL(for: record))
+        if record.kind == .dictation {
+            dictationActions
         }
-
         if copied {
             Image(systemName: "checkmark")
                 .font(.system(size: 12, weight: .bold))
@@ -104,15 +165,39 @@ private struct HistoryRecordRow: View {
                 .frame(width: 16, height: 16)
         } else {
             HistoryAction(symbol: "doc.on.doc", help: L("Скопировать")) {
-                let pasteboard = NSPasteboard.general
-                pasteboard.clearContents()
-                pasteboard.setString(record.text, forType: .string)
-                copied = true
-                Task {
-                    try? await Task.sleep(for: .seconds(1.5))
-                    copied = false
-                }
+                copy()
             }
+        }
+        HistoryAction(symbol: "trash", help: L("Удалить"), hoverAccent: true) {
+            if playback.playingID == record.id {
+                playback.stop()
+            }
+            store.delete(record.id)
+        }
+    }
+
+    private func copy() {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(record.text, forType: .string)
+        copied = true
+        Task {
+            try? await Task.sleep(for: .seconds(1.5))
+            copied = false
+        }
+    }
+
+    @ViewBuilder
+    private var dictationActions: some View {
+        HistoryAction(
+            symbol: playback.isPlaying(record.id) ? "pause.fill" : "play.fill",
+            filled: true,
+            help: playback.isPlaying(record.id) ? L("Стоп") : L("Воспроизвести")
+        ) {
+            if let url = store.audioURL(for: record) {
+                playback.toggle(record.id, url: url)
+            }
+            coordinator.achievements.mark(.playback)
         }
 
         if retranscribing {
@@ -126,12 +211,6 @@ private struct HistoryRecordRow: View {
             }
         }
 
-        HistoryAction(symbol: "trash", help: L("Удалить"), hoverAccent: true) {
-            if playback.playingID == record.id {
-                playback.stop()
-            }
-            store.delete(record.id)
-        }
     }
 
     private func retranscribe() {
@@ -143,6 +222,7 @@ private struct HistoryRecordRow: View {
             guard let text = try? await coordinator.models.transcribe(samples, options: .fromPrefs),
                   !text.isEmpty else { return }
             store.updateText(record.id, text: text)
+            coordinator.achievements.mark(.retranscribe)
         }
     }
 
