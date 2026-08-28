@@ -9,27 +9,43 @@ import SwiftUI
 /// being swapped for another.
 struct HUDView: View {
     let coordinator: RecordingCoordinator
+    let bar: HUDBarState
 
     /// Display phase. Separate from the coordinator state: in the mockup,
     /// recording starts with an intermediate dot circle that only then
     /// expands into the waveform bar.
     private enum Phase: Equatable {
+        /// Thin resting bar, shown instead of nothing when the bar is enabled.
+        case idle
+        /// The resting bar grew into the quick menu under the cursor.
+        case hover
         case hidden, dot, recording, processing, done
     }
+
+    @AppStorage(Prefs.Key.hudAlwaysVisible) private var alwaysVisible = false
 
     @State private var phase: Phase = .hidden
     /// Width of the "Transcribing…" row — it depends on the language and the download percentage.
     @State private var processingWidth: CGFloat = 172
+    /// Width of the quick menu — the mode label differs per mode and language.
+    @State private var hoverWidth: CGFloat = 186
     @State private var checkDrawn = false
     @State private var phaseTask: Task<Void, Never>?
 
-    /// Widths from the mockup: 38 / 136 / 172.
+    /// Widths from the mockup: 38 / 136 / 172; the resting bar is 72 × 6.
     private var width: CGFloat {
         switch phase {
+        case .idle: 72
+        case .hover: hoverWidth
         case .hidden, .dot, .done: 38
         case .recording: 136
         case .processing: processingWidth
         }
+    }
+
+    /// Every capsule keeps the current 38pt height; only the resting bar is thinner.
+    private var height: CGFloat {
+        phase == .idle ? 6 : 38
     }
 
     // Spring with no bounce: with bounce the capsule overshoots the target width
@@ -39,6 +55,34 @@ struct HUDView: View {
     private let crossfade = Animation.easeInOut(duration: 0.26)
 
     var body: some View {
+        VStack(spacing: 8) {
+            if coordinator.ask.isActive {
+                AskBubble(session: coordinator.ask)
+                    .transition(.opacity)
+            } else if phase == .hover, bar.menuOpen {
+                // Plain fade: a `.move(edge: .bottom)` slides the card up through
+                // the capsule, which looks like the two are colliding.
+                HUDModeMenu(bar: bar)
+                    .transition(.opacity)
+            }
+            capsule
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        .padding(.bottom, 4)
+        .animation(crossfade, value: bar.menuOpen)
+        .animation(crossfade, value: coordinator.ask.isActive)
+        .background(alignment: .bottom) { widthProbe }
+        .background(alignment: .bottom) { hoverProbe }
+        .onAppear { sync(to: coordinator.state) }
+        .onChange(of: coordinator.state) { _, state in sync(to: state) }
+        .onChange(of: bar.expanded) { _, _ in sync(to: coordinator.state) }
+        .onChange(of: alwaysVisible) { _, _ in
+            bar.reset()
+            sync(to: coordinator.state)
+        }
+    }
+
+    private var capsule: some View {
         // Layers are pinned to the left, like inset:0 + flex in the mockup: the dot
         // stays put (14px from the edge) while the capsule grows to the right — so the
         // dot "drifts left" relative to the center and the cross slides in from the right.
@@ -46,6 +90,7 @@ struct HUDView: View {
             layer(dotContent, visible: phase == .dot)
             layer(recordingContent, visible: phase == .recording)
             layer(processingContent, visible: phase == .processing)
+            layer(HUDQuickMenu(coordinator: coordinator, bar: bar), visible: phase == .hover)
             // The checkmark spans the full capsule width and is centered in it: otherwise
             // during the collapse it sits at the left edge and slides right along with it.
             layer(doneContent.frame(width: max(38, width), height: 38), visible: phase == .done)
@@ -53,22 +98,30 @@ struct HUDView: View {
         // Width never smaller than the height — otherwise the capsule turns into a vertical egg.
         // alignment is required: the content is wider than the capsule, and without it SwiftUI
         // centers it in the frame — you'd see the middle of the bar, not the left edge with the dot.
-        .frame(width: max(38, width), height: 38, alignment: .leading)
-        .background(Tokens.surface, in: Capsule())
-        .overlay(Capsule().strokeBorder(Tokens.border, lineWidth: 1))
+        .frame(width: max(height, width), height: height, alignment: .leading)
+        // The resting bar is a solid dark sliver, not a white capsule — so fill,
+        // border and shadow all switch with the phase.
+        .background(phase == .idle ? AnyShapeStyle(Tokens.text.opacity(0.45)) : AnyShapeStyle(Tokens.surface), in: Capsule())
+        .overlay(Capsule().strokeBorder(Tokens.border.opacity(phase == .idle ? 0 : 1), lineWidth: 1))
         .clipShape(Capsule())
-        .shadow(color: Tokens.shadowHUD.opacity(0.10), radius: 14, y: 6)
+        // The resting bar is a dark sliver lying on whatever wallpaper happens to
+        // be there; a ring of the opposite colour keeps its edge readable. It goes
+        // *after* the clip and *outside* the shape: an inset border would eat two
+        // of the bar's six points, and before the clip it would be cut away.
+        .overlay {
+            if phase == .idle {
+                Capsule()
+                    .stroke(Tokens.dynamic(0xFFFFFF, 0x101014).opacity(0.45), lineWidth: 0.75)
+                    .padding(-0.75)
+            }
+        }
+        .shadow(color: Tokens.shadowHUD.opacity(phase == .idle ? 0 : 0.10), radius: 14, y: 6)
         .scaleEffect(phase == .hidden ? 0.55 : 1)
         .opacity(phase == .hidden ? 0 : 1)
         // Appear/disappear is shorter than the width morph — otherwise it's unclear
         // at which point the capsule is already gone.
         .animation(.easeOut(duration: 0.3), value: phase == .hidden)
         .animation(morph, value: phase)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        .padding(.bottom, 4)
-        .background(alignment: .bottom) { widthProbe }
-        .onAppear { sync(to: coordinator.state) }
-        .onChange(of: coordinator.state) { _, state in sync(to: state) }
     }
 
     /// Content layer: shown/hidden via opacity; its size doesn't affect the capsule.
@@ -85,9 +138,15 @@ struct HUDView: View {
     /// Intermediate start phase: a circle with a dot. The dot sits exactly where the
     /// blinking recording dot will be (14px from the left edge) — so it doesn't
     /// "jump" on expansion, it stays in place.
+    /// Red is local dictation; the Ask mode dot is violet, because those words
+    /// are about to leave the Mac.
+    private var liveColor: Color {
+        alwaysVisible ? Prefs.hudMode.tint : Tokens.accent
+    }
+
     private var dotContent: some View {
         Circle()
-            .fill(Tokens.accent)
+            .fill(liveColor)
             .frame(width: 8, height: 8)
             .padding(.leading, 14)
             .frame(width: 38, height: 38, alignment: .leading)
@@ -95,7 +154,7 @@ struct HUDView: View {
 
     private var recordingContent: some View {
         HStack(spacing: 11) {
-            BlinkingDot()
+            BlinkingDot(color: liveColor)
             WaveBars(level: coordinator.level)
             cancelButton
         }
@@ -142,6 +201,21 @@ struct HUDView: View {
             }
     }
 
+    /// Same trick for the quick menu: its width depends on the mode label.
+    private var hoverProbe: some View {
+        HUDQuickMenu(coordinator: coordinator, bar: bar)
+            .fixedSize()
+            .hidden()
+            .background {
+                GeometryReader { proxy in
+                    Color.clear.preference(key: HoverWidthKey.self, value: proxy.size.width)
+                }
+            }
+            .onPreferenceChange(HoverWidthKey.self) { measured in
+                if measured > 0 { hoverWidth = measured }
+            }
+    }
+
     // MARK: - Sync with the coordinator
 
     private func sync(to state: RecordingCoordinator.State) {
@@ -168,7 +242,12 @@ struct HUDView: View {
                 withAnimation(.easeOut(duration: 0.4)) { checkDrawn = true }
             }
         case .hidden:
-            phase = .hidden
+            // With the bar turned off this is the old behaviour — nothing on screen.
+            phase = if !alwaysVisible {
+                .hidden
+            } else {
+                bar.expanded ? .hover : .idle
+            }
             checkDrawn = false
         }
     }
@@ -200,6 +279,14 @@ struct HUDView: View {
 
 /// Width of the processing-phase content — measured via the hidden copy.
 private struct WidthKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = max(value, nextValue())
+    }
+}
+
+/// Same, for the quick menu.
+private struct HoverWidthKey: PreferenceKey {
     static let defaultValue: CGFloat = 0
     static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
         value = max(value, nextValue())
@@ -260,11 +347,13 @@ private struct SpinnerRing: View {
 }
 
 private struct BlinkingDot: View {
+    var color: Color = Tokens.accent
+
     @State private var visible = true
 
     var body: some View {
         Circle()
-            .fill(Tokens.accent)
+            .fill(color)
             .frame(width: 8, height: 8)
             .opacity(visible ? 1 : 0.2)
             .onAppear {

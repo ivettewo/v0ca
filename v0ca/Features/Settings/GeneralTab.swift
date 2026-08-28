@@ -15,6 +15,7 @@ struct GeneralTab: View {
     @AppStorage(Prefs.Key.autoSend) private var autoSend: String = Prefs.AutoSend.off.rawValue
     @AppStorage(Prefs.Key.hudPosition) private var hudPosition: String = Prefs.HUDPosition.bottom.rawValue
     @AppStorage(Prefs.Key.hudOffset) private var hudOffset: String = Prefs.HUDOffset.low.rawValue
+    @AppStorage(Prefs.Key.hudAlwaysVisible) private var hudAlwaysVisible = false
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @Bindable private var language = AppLanguage.shared
     @AppStorage(Prefs.Key.appTheme) private var appTheme: String = Prefs.AppTheme.light.rawValue
@@ -114,6 +115,15 @@ struct GeneralTab: View {
             SettingRow(title: L("Отменить запись")) {
                 ShortcutField(name: .cancelRecording)
             }
+            ForEach(Prefs.HUDMode.allCases, id: \.self) { mode in
+                RowDivider()
+                SettingRow(
+                    title: L("Режим «%@»", L(mode.label)),
+                    subtitle: hudAlwaysVisible ? nil : L("Работает, когда включена полоска")
+                ) {
+                    ShortcutField(name: .mode(mode))
+                }
+            }
         }
 
         SettingsSection(title: L("Система")) {
@@ -138,6 +148,13 @@ struct GeneralTab: View {
                             launchAtLogin = SMAppService.mainApp.status == .enabled
                         }
                     }
+            }
+            RowDivider()
+            SettingRow(
+                title: L("Всегда показывать полоску"),
+                subtitle: L("Тонкая полоска у края экрана; наведите на неё — откроется быстрое меню")
+            ) {
+                AccentToggle(isOn: $hudAlwaysVisible)
             }
             RowDivider()
             SettingRow(title: L("Положение индикатора записи")) {

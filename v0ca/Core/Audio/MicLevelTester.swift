@@ -25,11 +25,11 @@ final class MicLevelTester: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
         Task {
             defer { isStarting = false }
             guard await AudioRecorder.requestMicAccess() == .granted else {
-                errorText = "Нет доступа к микрофону — включите во вкладке «Разрешения»"
+                errorText = L("Нет доступа к микрофону — включите во вкладке «Разрешения»")
                 return
             }
             guard let device = AudioRecorder.selectedDevice() else {
-                errorText = "Микрофон не найден"
+                errorText = L("Микрофон не найден")
                 return
             }
             do {
@@ -57,7 +57,7 @@ final class MicLevelTester: NSObject, AVCaptureAudioDataOutputSampleBufferDelega
                 isRunning = true
                 log.info("Тест микрофона запущен: \(device.localizedName, privacy: .public)")
             } catch {
-                errorText = "Не удалось запустить: \(error.localizedDescription)"
+                errorText = L("Не удалось запустить: %@", error.localizedDescription)
                 log.error("Тест микрофона: \(error)")
             }
         }

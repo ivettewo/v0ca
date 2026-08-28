@@ -69,7 +69,6 @@ enum L10n {
 
         // New onboarding (wizard window)
         "Настройка v0ca": "Set up v0ca",
-        "Новый онбординг": "New onboarding",
         "Голос — в текст, в любом приложении. Всё распознаётся локально на вашем устройстве. Три шага — и можно говорить.":
             "Voice to text, in any app. Everything is recognized locally on your device. Three steps — and you're talking.",
         "Начать настройку": "Get started",
@@ -375,8 +374,17 @@ enum L10n {
         "Вопросы и снимки экрана уходят провайдеру по API. Локально, на устройстве, работает только транскрибация речи в текст.":
             "Questions and screenshots go to the provider over the API. Only speech-to-text runs locally, on your device.",
 
+        "Режим «%@»": "“%@” mode",
+        "Работает, когда включена полоска": "Works when the bar is enabled",
+
         "Снимок экрана": "Screenshot",
         "Всё": "All",
+
+        // Sound tab
+        "Нет доступа к микрофону — включите во вкладке «Разрешения»":
+            "No microphone access — enable it on the Permissions tab",
+        "Микрофон не найден": "No microphone found",
+        "Не удалось запустить: %@": "Could not start: %@",
 
         // AI achievements
         "Вопросы": "Questions",
@@ -407,6 +415,39 @@ enum L10n {
         "Получить ответы от двух разных провайдеров": "Get answers from two different providers",
         "Полный набор": "The full set",
         "Получить ответы от всех провайдеров": "Get answers from every provider",
+
+        // Screen mode
+        "Запись экрана": "Screen recording",
+        "Снимок экрана для режима «Экран»": "Screenshots for the “Screen” mode",
+        "Нужно только для режима «Экран» — без него диктовка работает":
+            "Only needed for the “Screen” mode — dictation works without it",
+        "Посмотри на снимок экрана. Если на нём есть вопрос или задача — ответь на неё. Если нет — коротко объясни, что здесь происходит и на что стоит обратить внимание.":
+            "Look at this screenshot. If it contains a question or a task, answer it. If not, briefly explain what is going on here and what deserves attention.",
+
+        // Ask mode
+        "%@ с": "%@ s",
+        "Клик — отправить сразу · Esc — отменить": "Click to send now · Esc to cancel",
+        "Отправить сразу": "Send now",
+        "Перегенерировать": "Regenerate",
+        "Закрыть": "Close",
+        "Повторить": "Retry",
+        "Не выбрана модель — подключите провайдера в настройках":
+            "No model selected — connect a provider in Settings",
+        "Провайдер отклонил ключ": "The provider rejected the key",
+        "Нет связи с провайдером": "Cannot reach the provider",
+        "Модель не ответила за %@ секунд": "The model did not answer within %@ seconds",
+        "Провайдер не ответил вовремя": "The provider did not answer in time",
+
+        // Always-visible bar
+        "Всегда показывать полоску": "Always show the bar",
+        "Тонкая полоска у края экрана; наведите на неё — откроется быстрое меню":
+            "A thin bar at the screen edge; hover it to open the quick menu",
+        "Спросить": "Ask",
+        "Экран": "Screen",
+        "На устройстве · ничего не покидает Mac": "On device · nothing leaves your Mac",
+        "Ваши проиндексированные заметки · ответ от модели по API":
+            "Your indexed notes · answered by a model over the API",
+        "Весь экран уходит в модель по API": "The whole screen goes to a model over the API",
 
         // Stats
         "Статистика": "Stats",
@@ -512,4 +553,9 @@ enum L10n {
 @MainActor
 func L(_ ru: String, _ argument: CVarArg) -> String {
     String(format: L(ru), argument)
+}
+
+@MainActor
+func L(_ ru: String, _ first: CVarArg, _ second: CVarArg) -> String {
+    String(format: L(ru), first, second)
 }

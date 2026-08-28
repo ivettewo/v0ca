@@ -1,11 +1,13 @@
 import AVFoundation
 import ApplicationServices
+import CoreGraphics
 import SwiftUI
 
 /// "Permissions" tab: status of Microphone and Accessibility.
 struct PermissionsTab: View {
     @State private var micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
     @State private var axGranted = AXIsProcessTrusted()
+    @State private var screenGranted = CGPreflightScreenCaptureAccess()
 
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
@@ -27,6 +29,15 @@ struct PermissionsTab: View {
             ) {
                 axControl
             }
+            RowDivider()
+            SettingRow(
+                title: L("Запись экрана"),
+                subtitle: screenGranted
+                    ? L("Снимок экрана для режима «Экран»")
+                    : L("Нужно только для режима «Экран» — без него диктовка работает")
+            ) {
+                screenControl
+            }
         }
 
         // Description under the section — from the "Settings · New screens" mockup, 05.
@@ -41,6 +52,7 @@ struct PermissionsTab: View {
         .onReceive(timer) { _ in
             micStatus = AVCaptureDevice.authorizationStatus(for: .audio)
             axGranted = AXIsProcessTrusted()
+            screenGranted = CGPreflightScreenCaptureAccess()
         }
     }
 
@@ -85,6 +97,22 @@ struct PermissionsTab: View {
                 let promptKey = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String
                 AXIsProcessTrustedWithOptions([promptKey: true] as CFDictionary)
                 openSystemSettings("Privacy_Accessibility")
+            }
+        }
+    }
+
+    // MARK: - Screen recording
+
+    /// Optional, unlike the other two: only the "Screen" mode needs it, and the
+    /// system makes the user restart the app after granting it.
+    @ViewBuilder
+    private var screenControl: some View {
+        if screenGranted {
+            grantedBadge
+        } else {
+            DSButton(L("Разрешить")) {
+                CGRequestScreenCaptureAccess()
+                openSystemSettings("Privacy_ScreenCapture")
             }
         }
     }

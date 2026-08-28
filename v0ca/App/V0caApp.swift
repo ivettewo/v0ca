@@ -51,7 +51,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let coordinator = RecordingCoordinator(
         models: ModelManager(),
         history: HistoryStore(),
-        stats: StatsStore()
+        stats: StatsStore(),
+        achievements: AchievementsStore()
     )
     private(set) lazy var settingsWindow = SettingsWindowController(coordinator: coordinator)
     private lazy var onboardingWindow = OnboardingWindowController(models: coordinator.models)
@@ -64,10 +65,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         Theme.apply()
         hud = HUDPanelController(coordinator: coordinator)
-        settingsWindow.openOnboarding = { [weak self] in
-            self?.onboardingWindow.show()
-        }
         coordinator.onMicDenied = { [weak self] in
+            self?.settingsWindow.show(tab: .permissions)
+        }
+        coordinator.onScreenDenied = { [weak self] in
             self?.settingsWindow.show(tab: .permissions)
         }
         // First launch (no onboarding-done flag) — show only the onboarding

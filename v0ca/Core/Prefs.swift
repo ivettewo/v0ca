@@ -10,6 +10,14 @@ enum Prefs {
         static let autoSend = "autoSend"
         static let hudPosition = "hudPosition"
         static let hudOffset = "hudOffset"
+        /// Keep a thin bar on screen at all times; hovering it opens the quick menu.
+        static let hudAlwaysVisible = "hudAlwaysVisible"
+        /// Selected mode in the quick menu. "Ask" and "Screen" are not wired up yet.
+        static let hudMode = "hudMode"
+        /// Provider models picked on the Providers tab, as "<provider>/<model>".
+        /// The API keys themselves live in the Keychain, never here.
+        static let askModel = "askModel"
+        static let screenModel = "screenModel"
         static let soundStart = "soundStart"
         static let soundDone = "soundDone"
         static let historyLimit = "historyLimit"
@@ -68,6 +76,43 @@ enum Prefs {
             case .twoWeeks: "Через 2 недели"
             case .threeMonths: "Через 3 месяца"
             case .off: "Никогда"
+            }
+        }
+    }
+
+    /// Mode picked in the always-visible bar. Only `dictation` does anything so far —
+    /// the other two are placeholders for the API-backed modes from the mockup.
+    enum HUDMode: String, CaseIterable {
+        case dictation
+        case ask
+        case screen
+
+        var label: String {
+            switch self {
+            case .dictation: "Диктовка"
+            case .ask: "Спросить"
+            case .screen: "Экран"
+            }
+        }
+
+        /// True for the modes that send anything over the network. Drives the
+        /// violet accents: red must stay the colour of "this stays on device".
+        var isRemote: Bool { self != .dictation }
+
+        /// Where the audio and the text go — shown above the mode list.
+        var route: String {
+            switch self {
+            case .dictation: "На устройстве · ничего не покидает Mac"
+            case .ask: "Ваши проиндексированные заметки · ответ от модели по API"
+            case .screen: "Весь экран уходит в модель по API"
+            }
+        }
+
+        var icon: String {
+            switch self {
+            case .dictation: "mic"
+            case .ask: "sparkles"
+            case .screen: "display"
             }
         }
     }
@@ -220,5 +265,13 @@ enum Prefs {
 
     static var onboardingDone: Bool {
         UserDefaults.standard.bool(forKey: Key.onboardingDone)
+    }
+
+    static var hudAlwaysVisible: Bool {
+        UserDefaults.standard.bool(forKey: Key.hudAlwaysVisible)
+    }
+
+    static var hudMode: HUDMode {
+        HUDMode(rawValue: UserDefaults.standard.string(forKey: Key.hudMode) ?? "") ?? .dictation
     }
 }

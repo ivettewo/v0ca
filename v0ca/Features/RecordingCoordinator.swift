@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import KeyboardShortcuts
 import Observation
@@ -25,15 +26,26 @@ final class RecordingCoordinator {
     let models: ModelManager
     let history: HistoryStore
     let stats: StatsStore
+    let achievements: AchievementsStore
+    /// API keys for the non-local modes. Held here so the settings window can
+    /// reach the same instance the rest of the app uses.
+    let providerKeys = ProviderKeyStore()
+    /// The "Ask" flow. Only used when that mode is selected in the bar.
+    let ask: AskSession
 
     var modelState: ModelManager.LoadState { models.loadState }
 
     @ObservationIgnored var stateDidChange: ((State) -> Void)?
     /// Microphone permission denied — open settings on the Permissions tab.
     @ObservationIgnored var onMicDenied: (() -> Void)?
+    /// Screen Recording permission missing — same tab.
+    @ObservationIgnored var onScreenDenied: (() -> Void)?
 
     @ObservationIgnored private let recorder = AudioRecorder()
     @ObservationIgnored private let fnMonitor = FnHotkeyMonitor()
+    /// The screenshot taken at the start of a "Screen" recording. Memory only,
+    /// handed to the bubble when the words are ready and dropped right after.
+    @ObservationIgnored private var pendingShot: (jpeg: Data, preview: NSImage)?
     @ObservationIgnored private var transcriptionTask: Task<Void, Never>?
     @ObservationIgnored private var unloadTimer: Task<Void, Never>?
     @ObservationIgnored private let log = Logger(category: "RecordingCoordinator")
@@ -47,10 +59,20 @@ final class RecordingCoordinator {
         UserDefaults.standard.object(forKey: Prefs.Key.unloadModelAfterMinutes) as? Int ?? 15
     }
 
-    init(models: ModelManager, history: HistoryStore, stats: StatsStore) {
+    init(
+        models: ModelManager,
+        history: HistoryStore,
+        stats: StatsStore,
+        achievements: AchievementsStore
+    ) {
         self.models = models
         self.history = history
         self.stats = stats
+        self.achievements = achievements
+        ask = AskSession(
+            keys: providerKeys, history: history,
+            stats: stats, achievements: achievements
+        )
 
         // Push-to-talk: recording lasts while the key is held down.
         KeyboardShortcuts.onKeyDown(for: .toggleRecording) { [weak self] in
@@ -74,11 +96,26 @@ final class RecordingCoordinator {
         }
         KeyboardShortcuts.disable(.cancelRecording)
 
+        // Mode switching from anywhere. Only meaningful while the bar is on —
+        // the mode has no effect otherwise, and silently eating ⌘⇧1 would be rude.
+        for mode in Prefs.HUDMode.allCases {
+            KeyboardShortcuts.onKeyUp(for: .mode(mode)) {
+                guard Prefs.hudAlwaysVisible else { return }
+                UserDefaults.standard.set(mode.rawValue, forKey: Prefs.Key.hudMode)
+            }
+        }
+
         // Esc via CGEventTap: the Carbon hotkey above doesn't fire while fn/⌥ is
         // held in push-to-talk (the event arrives as "fn+Esc"). The tap catches
         // Esc with any modifiers; outside of recording the event is left alone.
         fnMonitor.onEscape = { [weak self] in
-            guard let self, self.state == .recording || self.state == .processing else {
+            guard let self else { return false }
+            // The Ask bubble outlives the recording, and Esc has to close it too.
+            if self.ask.isActive {
+                self.ask.dismiss()
+                return true
+            }
+            guard self.state == .recording || self.state == .processing else {
                 return false
             }
             self.cancel()
@@ -133,6 +170,7 @@ final class RecordingCoordinator {
     func cancel() {
         transcriptionTask?.cancel()
         transcriptionTask = nil
+        pendingShot = nil
         if state == .recording {
             recorder.stop()
         }
@@ -141,10 +179,37 @@ final class RecordingCoordinator {
         state = .hidden
     }
 
+    private var isScreenMode: Bool {
+        Prefs.hudAlwaysVisible && Prefs.hudMode == .screen
+    }
+
+    /// Grabs the display and keeps it in memory until the recording ends.
+    private func captureScreen() {
+        guard ScreenCapture.hasPermission else {
+            ScreenCapture.requestPermission()
+            onScreenDenied?()
+            return
+        }
+        pendingShot = nil
+        Task {
+            do {
+                pendingShot = try await ScreenCapture.captureDisplayUnderCursor()
+            } catch {
+                log.error("Снимок не сделан: \(error)")
+            }
+        }
+    }
+
     private func start() {
         // Dictation is disabled until onboarding is finished: single entry point
         // for all triggers (hotkey, fn, push-to-talk, menu bar).
         guard Prefs.onboardingDone else { return }
+        // In "Screen" the shot is grabbed the moment the key goes down — before
+        // the bar has a chance to change and before the user starts moving
+        // windows around — and the voice on top of it becomes the question.
+        if isScreenMode {
+            captureScreen()
+        }
         Task {
             guard await AudioRecorder.requestMicAccess() == .granted else {
                 log.error("Нет разрешения на микрофон — открываю настройки")
@@ -186,13 +251,52 @@ final class RecordingCoordinator {
             do {
                 var text = try await models.transcribe(samples, options: .fromPrefs)
                 guard !Task.isCancelled else { return }
-                if !text.isEmpty {
-                    history.add(samples: samples, text: text)
-                    stats.addDictation(text: text)
-                    if Prefs.appendSpace {
-                        text += " "
+
+                // A screenshot is worth sending even in silence: without words the
+                // bubble falls back to its own prompt.
+                if let shot = pendingShot {
+                    pendingShot = nil
+                    // No dictation row here: the question lands in the history as
+                    // part of the answer, and logging it twice reads as a bug.
+                    if !text.isEmpty {
+                        stats.addDictation(
+                            text: text,
+                            seconds: Double(samples.count) / Double(WavFile.sampleRate)
+                        )
                     }
-                    TextInserter.insert(text)
+                    ask.begin(screenshot: shot.jpeg, preview: shot.preview, question: text)
+                    SoundFeedback.recordDone()
+                    state = .hidden
+                    return
+                }
+
+                if !text.isEmpty {
+                    let asking = Prefs.hudMode == .ask && Prefs.hudAlwaysVisible
+                    if !asking {
+                        history.add(samples: samples, text: text)
+                    }
+                    stats.addDictation(
+                        text: text,
+                        seconds: Double(samples.count) / Double(WavFile.sampleRate)
+                    )
+                    if let engine = models.activeModel?.engine {
+                        achievements.mark(engine: engine)
+                    }
+                    // In "Ask" the words are a question, not something to paste:
+                    // they go to the bubble instead of the active app.
+                    if asking {
+                        ask.begin(question: text)
+                        // The green checkmark means "pasted into your app", and in
+                        // this mode nothing was pasted — the bubble is the result.
+                        SoundFeedback.recordDone()
+                        state = .hidden
+                        return
+                    } else {
+                        if Prefs.appendSpace {
+                            text += " "
+                        }
+                        TextInserter.insert(text)
+                    }
                 }
                 SoundFeedback.recordDone()
                 state = .done
