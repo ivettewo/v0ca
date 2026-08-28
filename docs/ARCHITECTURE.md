@@ -23,7 +23,9 @@ v0ca/
 │   │   └── ModelDescriptor.swift        # descriptors + JSON catalog loading
 │   ├── Localization.swift # AppLanguage (ru/en) + L("русский ключ") lookup table
 │   ├── Insertion/        # text insertion: clipboard + CGEvent ⌘V
-│   └── History/          # JSON index + WAV files; StatsStore — daily dictation stats
+│   └── History/          # JSON index + WAV files
+│       ├── StatsStore.swift        # daily aggregates in stats.json (words, chars, seconds, hours)
+│       └── AchievementsStore.swift # achievement catalog; only non-derivable flags are persisted
 ├── Features/
 │   ├── HUD/              # state machine + SwiftUI views for the states
 │   ├── Onboarding/       # first-run wizard window (8 screens, gates recording)
