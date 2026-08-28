@@ -348,6 +348,33 @@ enum L10n {
         "Разрешить": "Allow",
         "Открыть настройки": "Open Settings",
 
+        // Providers
+        "Провайдеры": "Providers",
+        "Ключи провайдеров": "Provider keys",
+        "Показать остальных провайдеров": "Show other providers",
+        "Скрыть остальных провайдеров": "Hide other providers",
+        "Подключить": "Connect",
+        "Заменить ключ": "Replace key",
+        "Удалить ключ «%@»?": "Delete the “%@” key?",
+        "Ключ будет удалён из связки ключей. Модели этого провайдера перестанут быть доступны.":
+            "The key will be removed from the Keychain. This provider's models will no longer be available.",
+        "Какая модель за что отвечает": "Which model does what",
+        "Режим «Спросить»": "Ask mode",
+        "Текстовый вопрос по вашим заметкам": "A text question about your notes",
+        "Режим «Экран»": "Screen mode",
+        "Вопрос по снимку экрана — нужна модель со зрением":
+            "A question about a screenshot — needs a model with vision",
+        "Нет подключённых провайдеров": "No providers connected",
+        "Проверяем ключ…": "Checking the key…",
+        "Ключ подошёл · %@": "Key works · %@",
+        "Ключ не подошёл — провайдер его отклонил": "Key rejected by the provider",
+        "Не удалось связаться с провайдером — проверьте соединение":
+            "Could not reach the provider — check your connection",
+        "Провайдер ответил ошибкой %@": "Provider returned error %@",
+        "Непонятный ответ провайдера": "Unexpected response from the provider",
+        "Вопросы и снимки экрана уходят провайдеру по API. Локально, на устройстве, работает только транскрибация речи в текст.":
+            "Questions and screenshots go to the provider over the API. Only speech-to-text runs locally, on your device.",
+
         "Снимок экрана": "Screenshot",
         "Всё": "All",
 
