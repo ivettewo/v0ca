@@ -46,11 +46,7 @@ struct StatsMetricsCard: View {
             }
         }
         .padding(.horizontal, 22)
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.radiusCard))
-        .overlay(
-            RoundedRectangle(cornerRadius: Tokens.radiusCard)
-                .stroke(Tokens.cardBorder, lineWidth: 1)
-        )
+        .dsCard()
     }
 }
 

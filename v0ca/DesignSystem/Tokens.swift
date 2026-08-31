@@ -96,6 +96,8 @@ enum Tokens {
     static let radiusControl: CGFloat = 8
     /// Section cards: 18 per the "Settings · New screens" mockup (was 12).
     static let radiusCard: CGFloat = 18
+    /// A card inside a card, or a secondary block — one notch tighter.
+    static let radiusCardNested: CGFloat = 16
     static let radiusWindow: CGFloat = 14
 
     /// Monospaced: logo, timers, hotkeys, dates. SF Mono is a system font;

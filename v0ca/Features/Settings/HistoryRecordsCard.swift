@@ -21,8 +21,7 @@ struct HistoryRecordsCard: View {
                 HistoryRecordRow(coordinator: coordinator, record: record, playback: playback)
             }
         }
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.radiusCard))
-        .overlay(RoundedRectangle(cornerRadius: Tokens.radiusCard).stroke(Tokens.cardBorder, lineWidth: 1))
+        .dsCard()
         .clipShape(RoundedRectangle(cornerRadius: Tokens.radiusCard))
     }
 }
