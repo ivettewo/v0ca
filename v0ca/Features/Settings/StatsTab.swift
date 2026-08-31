@@ -12,6 +12,16 @@ struct StatsTab: View {
             StatsMetricsCard(rows: [totals, effort])
             StatsBarChart(points: stats.recentDays())
             StatsHeatmap(hourly: stats.hourly)
+            // Contributed by the "Расширенная статистика" module: no module, no
+            // chart — and nothing was recorded for it either.
+            if ModuleCatalog.isEnabled("stats") {
+                StatsDurationChart(
+                    buckets: stats.durationHistogram,
+                    median: stats.medianSeconds,
+                    longest: stats.longestSeconds,
+                    groups: stats.durationGroups
+                )
+            }
             AchievementsShelf(
                 achievements: coordinator.achievements.all(
                     stats: stats, models: coordinator.models, history: coordinator.history

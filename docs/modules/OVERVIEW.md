@@ -22,6 +22,18 @@ is produced, tested, signed and notarised; the person decides what they want
 running. Data a switched-off module owns is kept, not erased — off means
 invisible, not wiped.
 
+**Every module starts off. Without exception.** A fresh install is the plain
+app: hotkey, recording, transcription, insertion. Nothing else runs until
+someone turns it on by hand, however obviously useful it looks to us. A module
+that enables itself is a feature that was never chosen, and the whole point of
+this screen is that the composition of the app is the user's decision, not ours.
+There is no "sensible default on" — that phrasing is how the rule gets eroded.
+
+A module may put a setting of its own on another tab (screenshot optimization
+adds a switch to Providers). That setting behaves like any other setting and may
+default to on: the choice was already made when the module was switched on. The
+rule is about modules, not about what they configure.
+
 **Build-time inclusion — available, not used by default.** A module is a Swift
 package, so dropping it from the target's dependencies leaves its code out of the
 binary entirely. Normal releases include everything and this stays unused, but

@@ -49,6 +49,9 @@ final class AchievementsStore {
         case providerXai
         case providerGoogle
         case providerQwen
+        case providerPolza
+        /// A screenshot went out through the optimizer.
+        case optimizedShot
     }
 
     /// Which flag marks "this provider has answered".
@@ -59,6 +62,7 @@ final class AchievementsStore {
         case "xai": .providerXai
         case "google": .providerGoogle
         case "qwen": .providerQwen
+        case "polza": .providerPolza
         default: nil
         }
     }
@@ -98,6 +102,8 @@ final class AchievementsStore {
         let conditions = conditions(stats: stats, history: history)
 
         return AchievementCatalog.shared.achievements.compactMap { entry in
+            // A module's achievement leaves the shelf with its module.
+            if let module = entry.module, !ModuleCatalog.isEnabled(module) { return nil }
             if let name = entry.flag {
                 guard let flag = Flag(rawValue: name) else { return nil }
                 return flagged(entry, done: flags.contains(flag))
@@ -137,6 +143,10 @@ final class AchievementsStore {
             "bestAskWords": Double(stats.bestAskWords),
             "providersAnswered": Double(answered),
             "providersTotal": Double(ProviderCatalog.all.count),
+            "longestMinutes": stats.longestMinutes,
+            "shortDictations": Double(stats.shortDictations),
+            "filledBuckets": Double(stats.filledBuckets),
+            "bestMinutesInDay": stats.bestMinutesInDay,
             "downloadedModels": Double(downloaded),
             "enginesUsed": Double(engines),
         ]

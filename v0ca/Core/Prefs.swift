@@ -18,6 +18,13 @@ enum Prefs {
         /// The API keys themselves live in the Keychain, never here.
         static let askModel = "askModel"
         static let screenModel = "screenModel"
+        /// Offer only the recognized model families in the pickers. On by
+        /// default — a provider's full catalog is hundreds of entries.
+        static let featuredModelsOnly = "featuredModelsOnly"
+        /// Squeeze the screenshot before sending. Only consulted while the
+        /// "Screenshot optimization" module is on; the module decides whether the
+        /// setting exists at all, the setting decides whether it applies.
+        static let optimizeScreenshots = "optimizeScreenshots"
         static let soundStart = "soundStart"
         static let soundDone = "soundDone"
         static let historyLimit = "historyLimit"

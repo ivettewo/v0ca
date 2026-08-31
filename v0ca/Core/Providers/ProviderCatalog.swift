@@ -21,6 +21,9 @@ struct Provider: Identifiable, Hashable {
     /// model in the path.
     let chatURL: String
     let flavor: Flavor
+    /// Provided by a module: the provider exists only while that module is on.
+    /// Nil for the ones that are part of the app itself.
+    var moduleID: String?
 }
 
 /// A model as the provider itself reports it.
@@ -62,9 +65,32 @@ enum ProviderCatalog {
             chatURL: "https://dashscope-us.aliyuncs.com/compatible-mode/v1/chat/completions",
             flavor: .openAI
         ),
+        Provider(
+            id: "polza", name: "Polza AI", placeholder: "…",
+            modelsURL: "https://polza.ai/api/v1/models",
+            chatURL: "https://polza.ai/api/v1/chat/completions",
+            flavor: .openAI, moduleID: "polza"
+        ),
     ]
 
+    /// The providers the app currently offers: the built-in ones plus those
+    /// whose module is switched on. Computed on every read, so switching a
+    /// module takes effect without a restart.
+    static var available: [Provider] {
+        all.filter { provider in
+            provider.moduleID.map(ModuleCatalog.isEnabled) ?? true
+        }
+    }
+
+    /// Looks only among the available ones: a provider whose module was switched
+    /// off must stop answering, even if a stored setting still points at it.
     static func provider(id: String) -> Provider? {
+        available.first { $0.id == id }
+    }
+
+    /// Any provider by id, module or not — for the places that must describe a
+    /// key that is already in the Keychain (deleting it, showing it masked).
+    static func known(id: String) -> Provider? {
         all.first { $0.id == id }
     }
 }

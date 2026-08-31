@@ -1,33 +1,149 @@
 import SwiftUI
 
-/// Card shell for the two charts: title on the left, caption on the right, content below.
-private struct ChartCard<Content: View>: View {
-    let title: String
-    let caption: String
-    var empty = false
-    @ViewBuilder let content: Content
+/// Dictations by length, from the "Расширенная статистика" module. Per the
+/// "Настройки · Статистика" mockup: the same heat ladder as the hour map, laid
+/// out as nine columns with the share printed inside each one.
+struct StatsDurationChart: View {
+    let buckets: [StatsStore.DurationBucket]
+    let median: Double
+    let longest: Double
+    let groups: [(label: String, share: Double)]
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    private var peak: Int { buckets.map(\.count).max() ?? 0 }
+    private var total: Int { buckets.reduce(0) { $0 + $1.count } }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            HStack(alignment: .firstTextBaseline, spacing: 16) {
-                Text(title)
-                    .font(Tokens.sans(15, weight: .medium))
-                    .foregroundStyle(empty ? Tokens.text3 : Tokens.text)
-                Spacer(minLength: 16)
-                Text(caption)
-                    .font(Tokens.sans(12.5))
-                    .foregroundStyle(empty ? Tokens.controlBorder : Tokens.text3)
+        DSCard(title: L("Длина записи"), caption: caption, muted: total == 0) {
+            HStack(alignment: .bottom, spacing: 3) {
+                ForEach(buckets) { bucket in
+                    column(bucket)
+                }
             }
-            content
+            .overlay(alignment: .center) {
+                if total == 0 {
+                    Text(L("Появится после первой записи"))
+                        .font(Tokens.sans(12.5))
+                        .foregroundStyle(Tokens.text3)
+                }
+            }
+
+            Divider()
+                .overlay(Tokens.surface2)
+                .padding(.top, 2)
+
+            HStack(spacing: 22) {
+                ForEach(groups, id: \.label) { group in
+                    footerValue(
+                        total == 0 ? "—" : "\(Int((group.share * 100).rounded()))%",
+                        caption: group.label,
+                        accented: leader == group.label
+                    )
+                }
+                footerValue(
+                    longest > 0 ? Self.duration(longest) : "—",
+                    caption: "самая долгая",
+                    accented: false
+                )
+            }
         }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 20)
+    }
+
+    private func column(_ bucket: StatsStore.DurationBucket) -> some View {
+        VStack(spacing: 7) {
+            RoundedRectangle(cornerRadius: 4)
+                .fill(color(for: bucket))
+                .frame(height: 64)
+                .overlay(alignment: .bottom) {
+                    if total > 0 {
+                        Text("\(Int((Double(bucket.count) / Double(total) * 100).rounded()))%")
+                            .font(Tokens.mono(12.5, weight: .medium))
+                            .foregroundStyle(labelColor(for: bucket))
+                            .padding(.bottom, 7)
+                    }
+                }
+            Text(L(bucket.label))
+                .font(Tokens.mono(10.5, weight: .medium))
+                .foregroundStyle(
+                    bucket.count == peak && peak > 0 ? Tokens.accentHover : Tokens.text3
+                )
+                .lineLimit(1)
+                .minimumScaleFactor(0.85)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    /// The busiest of the three groups — the only accented number in the footer.
+    private var leader: String? {
+        guard total > 0 else { return nil }
+        return groups.max { $0.share < $1.share }?.label
+    }
+
+    private var caption: String {
+        guard total > 0 else { return "" }
+        return L("%@ записей · медиана ≈ %@", "\(total)", Self.seconds(median))
+    }
+
+    private func footerValue(_ value: String, caption: String, accented: Bool) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(value)
+                .font(Tokens.mono(17, weight: .medium))
+                .foregroundStyle(accented ? Tokens.accentHover : Tokens.text)
+            Text(L(caption))
+                .font(Tokens.sans(12.5))
+                .foregroundStyle(Tokens.text3)
+                .lineLimit(1)
+        }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.radiusCard))
-        .overlay(
-            RoundedRectangle(cornerRadius: Tokens.radiusCard)
-                .stroke(Tokens.cardBorder, lineWidth: 1)
-        )
+    }
+
+    /// Same ladder as the hour map, measured against the tallest bucket.
+    private func color(for bucket: StatsStore.DurationBucket) -> Color {
+        guard bucket.count > 0, peak > 0 else { return Tokens.surface2 }
+        return Tokens.accent.opacity(Self.opacities(dark: colorScheme == .dark)[step(bucket)])
+    }
+
+    /// The percentage sits on the fill, so it follows the fill's darkness.
+    private func labelColor(for bucket: StatsStore.DurationBucket) -> Color {
+        guard bucket.count > 0, peak > 0 else { return Tokens.text3 }
+        return switch step(bucket) {
+        case 4...: Tokens.textOnAccent
+        case 2...3: Tokens.text
+        case 1: Tokens.text2
+        default: Tokens.text3
+        }
+    }
+
+    private func step(_ bucket: StatsStore.DurationBucket) -> Int {
+        let fraction = Double(bucket.count) / Double(peak)
+        return switch fraction {
+        case 1: 6
+        case 0.76...: 5
+        case 0.51...: 4
+        case 0.31...: 3
+        case 0.16...: 2
+        case 0.06...: 1
+        default: 0
+        }
+    }
+
+    private static func opacities(dark: Bool) -> [Double] {
+        dark
+            ? [0.18, 0.28, 0.40, 0.55, 0.72, 0.86, 1]
+            : [0.10, 0.20, 0.34, 0.50, 0.70, 0.85, 1]
+    }
+
+    /// "24 с" / "1,5 мин" — the median, where seconds are the natural unit.
+    private static func seconds(_ value: Double) -> String {
+        value < 60
+            ? L("%@ с", "\(Int(value.rounded()))")
+            : L("%@ мин", String(format: "%.1f", value / 60))
+    }
+
+    /// "6:09" — the longest recording, where minutes are.
+    private static func duration(_ value: Double) -> String {
+        String(format: "%d:%02d", Int(value) / 60, Int(value) % 60)
     }
 }
 
@@ -39,10 +155,10 @@ struct StatsBarChart: View {
     private var peak: Int { points.map(\.words).max() ?? 0 }
 
     var body: some View {
-        ChartCard(
+        DSCard(
             title: L("Слов по дням"),
             caption: L("Последние %@ дней", "\(points.count)"),
-            empty: peak == 0
+            muted: peak == 0
         ) {
             HStack(alignment: .bottom, spacing: 10) {
                 ForEach(points) { point in
@@ -108,10 +224,10 @@ struct StatsHeatmap: View {
     private var total: Int { hourly.reduce(0, +) }
 
     var body: some View {
-        ChartCard(
+        DSCard(
             title: L("Когда вы диктуете"),
             caption: peakCaption,
-            empty: total == 0
+            muted: total == 0
         ) {
             VStack(alignment: .leading, spacing: 7) {
                 HStack(spacing: 3) {

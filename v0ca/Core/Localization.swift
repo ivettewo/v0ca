@@ -48,6 +48,7 @@ enum L10n {
         "Диктовка": "Dictation",
         "Онбординг": "Onboarding",
         "Общие": "General",
+        "Модули": "Modules",
         "Модели": "Models",
         "Звук": "Sound",
         "История": "History",
@@ -364,6 +365,10 @@ enum L10n {
         "Вопрос по снимку экрана — нужна модель со зрением":
             "A question about a screenshot — needs a model with vision",
         "Нет подключённых провайдеров": "No providers connected",
+        "Нет моделей": "No models",
+        "Только популярные модели": "Well-known models only",
+        "Провайдеры отдают сотни записей, включая снимки версий и генераторы картинок":
+            "Providers report hundreds of entries, dated snapshots and image generators included",
         "Проверяем ключ…": "Checking the key…",
         "Ключ подошёл · %@": "Key works · %@",
         "Ключ не подошёл — провайдер его отклонил": "Key rejected by the provider",
@@ -396,6 +401,8 @@ enum L10n {
         "Не отстанет": "Relentless",
         "Задать %@ вопросов голосом": "Ask %@ questions by voice",
         "Первый снимок": "First screenshot",
+        "Первый ужатый": "First squeezed",
+        "Отправить сжатый снимок": "Send a compressed screenshot",
         "Насмотренный": "Well-watched",
         "Сто экранов": "A hundred screens",
         "Отправить %@ снимков экрана": "Send %@ screenshots",
@@ -546,6 +553,127 @@ enum L10n {
         "Транскрибировать старую запись заново": "Re-transcribe an old record",
         "Готов к работе": "Ready to work",
         "Пройти онбординг целиком": "Complete the onboarding",
+
+        // Modules
+        "Все модули идут с приложением — скачивать нечего.":
+            "Every module ships with the app — there is nothing to download.",
+
+        // Modules — extended stats
+        "Расширенная статистика": "Extended stats",
+        "Длина записей и ещё 19 достижений": "Recording length and 19 more achievements",
+        "Добавляет к обычной статистике разбор по длине записей — от реплик короче 15 секунд до монологов от пяти минут.":
+            "Adds a breakdown by recording length to the usual stats — from remarks under 15 seconds to monologues over five minutes.",
+        "Гистограмма длительностей на вкладке «Статистика»":
+            "A length histogram on the Stats tab",
+        "Группа достижений «Длина»: 10 ступеней от минуты до получаса":
+            "The “Длина” achievement group: 10 rungs from a minute to half an hour",
+        "Лестница «слов за сутки» продлевается с 1 000 до 25 000":
+            "The words-per-day ladder grows from 1 000 to 25 000",
+        "Счётчики длины ведутся только пока модуль включён. Выключите — записи перестанут в них попадать, но накопленное останется и продолжится с того же места, когда включите обратно.":
+            "The length counters only run while the module is on. Switch it off and recordings stop feeding them, but what was collected stays and picks up where it left off when you switch it back.",
+        "Всё считается на устройстве и никуда не отправляется.":
+            "Everything is counted on device and goes nowhere.",
+
+        // Stats — length chart
+        "Длина записи": "Recording length",
+        "%@ записей · медиана ≈ %@": "%@ recordings · median ≈ %@",
+        "%@ с": "%@ s",
+        "%@ мин": "%@ min",
+        "до 5 с": "under 5 s",
+        "5–15 с": "5–15 s",
+        "15–30 с": "15–30 s",
+        "30–60 с": "30–60 s",
+        "1–2 мин": "1–2 min",
+        "2–3 мин": "2–3 min",
+        "3–5 мин": "3–5 min",
+        "5–10 мин": "5–10 min",
+        "10+ мин": "10+ min",
+        "до 30 с": "under 30 s",
+        "30 с – 3 мин": "30 s – 3 min",
+        "дольше 3 мин": "over 3 min",
+        "самая долгая": "longest",
+
+        // Achievements — length
+        "Длина": "Length",
+        "Минутка": "A minute",
+        "Записать минуту без остановки": "Record a minute without stopping",
+        "Три минуты": "Three minutes",
+        "Записать три минуты подряд": "Record three minutes straight",
+        "Пятиминутка": "Five minutes",
+        "Записать пять минут подряд": "Record five minutes straight",
+        "Десятиминутка": "Ten minutes",
+        "Записать десять минут подряд": "Record ten minutes straight",
+        "Получасовой": "Half an hour",
+        "Записать полчаса подряд": "Record half an hour straight",
+        "Телеграфист": "Telegraph operator",
+        "Скорострел": "Rapid fire",
+        "Сделать %@ записей короче 15 секунд": "Make %@ recordings under 15 seconds",
+        "Весь диапазон": "The whole range",
+        "Записать хотя бы по одной записи каждой длины":
+            "Record at least one of every length",
+        "Час речи": "An hour of speech",
+        "Наговорить час за сутки": "Speak for an hour in a day",
+        "Три часа": "Three hours",
+        "Наговорить три часа за сутки": "Speak for three hours in a day",
+
+        // Achievements — words per day ladder
+        "Две тысячи": "Two thousand",
+        "Три тысячи": "Three thousand",
+        "Пять тысяч": "Five thousand",
+        "Семь с половиной": "Seven and a half",
+        "Десять тысяч за сутки": "Ten thousand in a day",
+        "Двенадцать с половиной": "Twelve and a half",
+        "Пятнадцать тысяч": "Fifteen thousand",
+        "Двадцать тысяч": "Twenty thousand",
+        "Двадцать пять тысяч": "Twenty-five thousand",
+        "2 000 слов за сутки": "2 000 words in a day",
+        "3 000 слов за сутки": "3 000 words in a day",
+        "5 000 слов за сутки": "5 000 words in a day",
+        "7 500 слов за сутки": "7 500 words in a day",
+        "10 000 слов за сутки": "10 000 words in a day",
+        "12 500 слов за сутки": "12 500 words in a day",
+        "15 000 слов за сутки": "15 000 words in a day",
+        "20 000 слов за сутки": "20 000 words in a day",
+        "25 000 слов за сутки": "25 000 words in a day",
+
+        // Modules — screenshot optimization
+        "Оптимизация снимков": "Screenshot optimization",
+        "Снимок весит втрое меньше и быстрее уходит провайдеру":
+            "The screenshot weighs a third as much and travels faster",
+        "Сжимает снимок экрана перед отправкой в режиме «Экран».":
+            "Compresses the screenshot before it is sent in the “Screen” mode.",
+        "Без модуля: 1536 точек по длинной стороне, качество JPEG 0.8":
+            "Without the module: 1536 points on the long side, JPEG quality 0.8",
+        "С модулем: 1280 точек, качество от 0.8 вниз, пока файл не станет меньше 300 КБ":
+            "With it: 1280 points, quality stepping down from 0.8 until the file is under 300 KB",
+        "Предел — 0.45: ниже модель перестаёт читать мелкий шрифт":
+            "The floor is 0.45: below it the model stops reading small type",
+        "Не уложилось на 0.45 — кадр уменьшается до 1024 точек":
+            "Still too big at 0.45 — the frame drops to 1024 points",
+        "На экране 2560×1440 это 250–300 КБ вместо 700–900. Токенов не экономит: провайдер всё равно масштабирует картинку под себя.":
+            "On a 2560×1440 screen that is 250–300 KB instead of 700–900. It saves no tokens: the provider rescales the image to its own grid anyway.",
+        "Переключатель сжатия появляется в «Провайдерах»:":
+            "The compression switch appears on the Providers tab:",
+        "Сжимать снимки экрана": "Compress screenshots",
+        "Меньше вес — быстрее ответ и дешевле запрос":
+            "Less weight — a faster answer and a cheaper request",
+        "Провайдеры → Какая модель за что отвечает": "Providers → Which model does what",
+        "Обработка идёт в памяти, на диск снимок не попадает.":
+            "Processing happens in memory; the screenshot never touches the disk.",
+
+        // Modules — Polza AI
+        "Один ключ к моделям OpenAI, Anthropic, Google и другим":
+            "One key for models from OpenAI, Anthropic, Google and others",
+        "Посредник: один ключ открывает модели OpenAI, Anthropic, Google, xAI и других. Оплата в рублях по договору.":
+            "A middleman: one key opens models from OpenAI, Anthropic, Google, xAI and others. Billed in roubles under a contract.",
+        "Добавляет карточку подключения в «Провайдеры», под кнопкой «Показать остальных провайдеров»:":
+            "Adds a connect card to the Providers tab, under “Show other providers”:",
+        "Ключ из личного кабинета polza.ai": "Key from your polza.ai account",
+        "Провайдеры → Ключи провайдеров": "Providers → Provider keys",
+        "Ключ хранится в связке ключей macOS. После подключения Polza AI появляется в выборе провайдера для режимов «Спросить» и «Экран».":
+            "The key is kept in the macOS Keychain. Once connected, Polza AI appears in the provider picker for the “Ask” and “Screen” modes.",
+        "Запрос идёт через серверы Polza AI — на один узел больше, чем при прямом ключе. Распознавание речи остаётся на устройстве.":
+            "Requests travel through Polza AI's servers — one more party than a direct key. Speech recognition stays on your device.",
     ]
 }
 

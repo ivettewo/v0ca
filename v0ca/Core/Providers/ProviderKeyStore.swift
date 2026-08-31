@@ -63,17 +63,33 @@ final class ProviderKeyStore {
         }
     }
 
-    /// Models to offer for a mode. `visionOnly` drops the ones the provider
+    /// Providers with a working key, in catalog order. A provider whose module
+    /// is off drops out here — its key stays in the Keychain untouched, ready
+    /// for the moment the module comes back.
+    var connectedProviders: [Provider] {
+        ProviderCatalog.available.filter { isConnected($0.id) }
+    }
+
+    /// Models of one provider. `visionOnly` drops the ones the provider
     /// explicitly marks as not accepting images; models that say nothing about
     /// it stay in the list.
-    func availableModels(visionOnly: Bool) -> [(provider: Provider, model: ProviderModel)] {
-        ProviderCatalog.all
-            .filter { isConnected($0.id) }
-            .flatMap { provider in
-                (models[provider.id] ?? [])
-                    .filter { !visionOnly || $0.vision != false }
-                    .map { (provider: provider, model: $0) }
-            }
+    ///
+    /// Deliberately per provider: a model is picked inside the provider that
+    /// answers for it, so two providers offering the same model name (an
+    /// aggregator next to a direct key) can't be confused for one another.
+    /// `featuredOnly` keeps the recognized families only — see `ModelShortlist`.
+    /// If the shortlist matches nothing (an unknown provider, a catalog that
+    /// names things its own way), the full list is returned rather than an empty
+    /// picker: an empty list would look like a broken key.
+    func modelList(
+        of providerID: String,
+        visionOnly: Bool,
+        featuredOnly: Bool = false
+    ) -> [ProviderModel] {
+        let all = (models[providerID] ?? []).filter { !visionOnly || $0.vision != false }
+        guard featuredOnly else { return all }
+        let featured = ModelShortlist.featured(all)
+        return featured.isEmpty ? all : featured
     }
 
     func isConnected(_ providerID: String) -> Bool {

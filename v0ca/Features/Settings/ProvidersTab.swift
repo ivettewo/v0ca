@@ -8,6 +8,8 @@ struct ProvidersTab: View {
 
     @AppStorage(Prefs.Key.askModel) private var askModel: String = ""
     @AppStorage(Prefs.Key.screenModel) private var screenModel: String = ""
+    @AppStorage(Prefs.Key.featuredModelsOnly) private var featuredOnly = true
+    @AppStorage(Prefs.Key.optimizeScreenshots) private var optimizeScreenshots = true
 
     /// The other providers, collapsed by default: OpenAI is the one we expect
     /// people to connect, so it always stays in view.
@@ -24,17 +26,25 @@ struct ProvidersTab: View {
     private static let controlHeight: CGFloat = 38
 
     private var connected: [Provider] {
-        ProviderCatalog.all.filter { keys.isConnected($0.id) }
+        ProviderCatalog.available.filter { keys.isConnected($0.id) }
     }
 
     /// Always on top: OpenAI first, then anything else that has a key — a
     /// connected provider must never hide behind a collapsed list.
     private var pinned: [Provider] {
-        ProviderCatalog.all.filter { $0.id == Self.primaryID || keys.isConnected($0.id) }
+        ProviderCatalog.available.filter { $0.id == Self.primaryID || keys.isConnected($0.id) }
+    }
+
+    /// Providers a module brought in, still without a key: shown apart from the
+    /// built-in ones, because they are there by the user's own decision.
+    private var fromModules: [Provider] {
+        ProviderCatalog.available.filter { $0.moduleID != nil && !keys.isConnected($0.id) }
     }
 
     private var rest: [Provider] {
-        ProviderCatalog.all.filter { $0.id != Self.primaryID && !keys.isConnected($0.id) }
+        ProviderCatalog.available.filter {
+            $0.id != Self.primaryID && $0.moduleID == nil && !keys.isConnected($0.id)
+        }
     }
 
     var body: some View {
@@ -59,20 +69,27 @@ struct ProvidersTab: View {
                 }
             }
 
-            if !rest.isEmpty {
+            if !rest.isEmpty || !fromModules.isEmpty {
                 disclosure
                 if showAll {
-                    VStack(spacing: 0) {
-                        ForEach(Array(rest.enumerated()), id: \.element.id) { index, provider in
-                            if index > 0 {
-                                RowDivider()
-                            }
-                            connectRow(provider)
-                        }
+                    // Above the shared container and in a frame of its own: a
+                    // module provider is here because it was switched on, not
+                    // because the app ships with it.
+                    ForEach(fromModules) { provider in
+                        standaloneConnectCard(provider)
                     }
-                    .padding(.horizontal, 20)
-                    .background(Tokens.surfaceSoft, in: RoundedRectangle(cornerRadius: 16))
-                    .overlay(RoundedRectangle(cornerRadius: 16).stroke(Tokens.cardBorder, lineWidth: 1))
+                    if !rest.isEmpty {
+                        VStack(spacing: 0) {
+                            ForEach(Array(rest.enumerated()), id: \.element.id) { index, provider in
+                                if index > 0 {
+                                    RowDivider()
+                                }
+                                connectRow(provider)
+                            }
+                        }
+                        .padding(.horizontal, 20)
+                        .dsCard(.nested)
+                    }
                 }
             }
         }
@@ -107,8 +124,7 @@ struct ProvidersTab: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 18)
-        .background(Tokens.surfaceSoft, in: RoundedRectangle(cornerRadius: 16))
-        .overlay(RoundedRectangle(cornerRadius: 16).stroke(Tokens.cardBorder, lineWidth: 1))
+        .dsCard(.nested)
     }
 
     /// A provider with a key: accent border, masked key, replace and delete.
@@ -331,41 +347,104 @@ struct ProvidersTab: View {
                 ) {
                     modelPicker(selection: $screenModel, visionOnly: true)
                 }
+                // Contributed by the "Screenshot optimization" module: no module,
+                // no row. Switching the module off leaves the setting on disk.
+                if ModuleCatalog.isEnabled("screenshot") {
+                    RowDivider()
+                    SettingRow(
+                        title: L("Сжимать снимки экрана"),
+                        subtitle: L("Меньше вес — быстрее ответ и дешевле запрос")
+                    ) {
+                        AccentToggle(isOn: $optimizeScreenshots)
+                    }
+                }
+                RowDivider()
+                SettingRow(
+                    title: L("Только популярные модели"),
+                    subtitle: L("Провайдеры отдают сотни записей, включая снимки версий и генераторы картинок")
+                ) {
+                    AccentToggle(isOn: $featuredOnly)
+                }
             }
             .padding(.horizontal, 20)
-            .background(Tokens.surfaceSoft, in: RoundedRectangle(cornerRadius: Tokens.radiusCard))
-            .overlay(
-                RoundedRectangle(cornerRadius: Tokens.radiusCard)
-                    .stroke(Tokens.cardBorder, lineWidth: 1)
-            )
+            .dsCard(DSCardStyle(fill: Tokens.surfaceSoft, radius: Tokens.radiusCard))
         }
     }
 
-    /// Only models the connected providers actually reported are offered.
+    /// Two steps, not one list: first the provider that answers, then a model
+    /// from that provider alone. A merged list would put the same model name
+    /// twice — once direct, once through an aggregator — with no way to tell
+    /// which key pays for the request.
+    ///
+    /// The stored value stays "<provider>/<model>"; the two dropdowns are just
+    /// its two halves.
     @ViewBuilder
     private func modelPicker(selection: Binding<String>, visionOnly: Bool) -> some View {
-        let options = keys.availableModels(visionOnly: visionOnly)
-        if options.isEmpty {
+        let providers = keys.connectedProviders
+        if providers.isEmpty {
             Text(L("Нет подключённых провайдеров"))
                 .font(Tokens.sans(12.5))
                 .foregroundStyle(Tokens.text3)
         } else {
-            DesignDropdown(
-                // Prefixed with the provider so two providers offering a similar
-                // model name stay distinguishable.
-                options: options.map {
-                    (value: "\($0.provider.id)/\($0.model.id)", label: $0.model.name)
-                },
-                selection: selection,
-                width: 240
+            let current = Self.split(selection.wrappedValue)
+            let providerID = providers.contains { $0.id == current.provider }
+                ? current.provider
+                : providers[0].id
+            let models = keys.modelList(
+                of: providerID, visionOnly: visionOnly, featuredOnly: featuredOnly
             )
+
+            HStack(spacing: 8) {
+                DesignDropdown(
+                    options: providers.map { (value: $0.id, label: $0.name) },
+                    selection: Binding(
+                        get: { providerID },
+                        set: { picked in
+                            // Switching providers can't keep the old model: it
+                            // belonged to someone else's catalog.
+                            let first = keys.modelList(of: picked, visionOnly: visionOnly, featuredOnly: featuredOnly).first
+                            selection.wrappedValue = "\(picked)/\(first?.id ?? "")"
+                        }
+                    ),
+                    width: 150
+                )
+
+                if models.isEmpty {
+                    Text(L("Нет моделей"))
+                        .font(Tokens.sans(12.5))
+                        .foregroundStyle(Tokens.text3)
+                        .frame(width: 210, alignment: .leading)
+                } else {
+                    DesignDropdown(
+                        options: models.map { (value: $0.id, label: $0.name) },
+                        selection: Binding(
+                            get: {
+                                models.contains { $0.id == current.model }
+                                    ? current.model
+                                    : models[0].id
+                            },
+                            set: { selection.wrappedValue = "\(providerID)/\($0)" }
+                        ),
+                        width: 210
+                    )
+                }
+            }
             .onAppear {
-                let values = options.map { "\($0.provider.id)/\($0.model.id)" }
-                if !values.contains(selection.wrappedValue) {
-                    selection.wrappedValue = values[0]
+                // A provider that was disconnected, or a first run with nothing
+                // chosen yet: settle on something valid so the modes can work.
+                let valid = models.contains { $0.id == current.model }
+                if current.provider != providerID || !valid {
+                    selection.wrappedValue = "\(providerID)/\(models.first?.id ?? "")"
                 }
             }
         }
+    }
+
+    /// "<provider>/<model>" split on the first slash only — an aggregator's
+    /// model ids carry slashes of their own ("google/gemini-2.5-flash").
+    private static func split(_ value: String) -> (provider: String, model: String) {
+        guard let slash = value.firstIndex(of: "/") else { return (value, "") }
+        return (String(value[value.startIndex..<slash]), String(value[value.index(after: slash)...]))
     }
 
     private var privacyNote: some View {

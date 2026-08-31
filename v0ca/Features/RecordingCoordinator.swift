@@ -193,7 +193,11 @@ final class RecordingCoordinator {
         pendingShot = nil
         Task {
             do {
-                pendingShot = try await ScreenCapture.captureDisplayUnderCursor()
+                let shot = try await ScreenCapture.captureDisplayUnderCursor()
+                pendingShot = (shot.jpeg, shot.preview)
+                if shot.optimized {
+                    achievements.mark(.optimizedShot)
+                }
             } catch {
                 log.error("Снимок не сделан: \(error)")
             }

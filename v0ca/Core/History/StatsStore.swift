@@ -31,6 +31,11 @@ final class StatsStore {
         /// The longest question of the day, in words. Separate from `maxWords`,
         /// which counts dictations — a long transcript isn't a long question.
         var maxAskWords: Int
+        /// Dictations by length, keyed by bucket ("0-15", "300+"). Written only
+        /// while the "Расширенная статистика" module is on — see docs/STATS.md.
+        var durations: [String: Int]
+        /// The longest single dictation of the day, in seconds. Same module.
+        var maxSeconds: Double
 
         init(
             words: Int = 0,
@@ -42,7 +47,9 @@ final class StatsStore {
             maxWordsPerMinute: Double = 0,
             asks: Int = 0,
             screens: Int = 0,
-            maxAskWords: Int = 0
+            maxAskWords: Int = 0,
+            durations: [String: Int] = [:],
+            maxSeconds: Double = 0
         ) {
             self.words = words
             self.dictations = dictations
@@ -54,6 +61,8 @@ final class StatsStore {
             self.asks = asks
             self.screens = screens
             self.maxAskWords = maxAskWords
+            self.durations = durations
+            self.maxSeconds = maxSeconds
         }
 
         /// Everything below `dictations` was added later. Synthesized decoding
@@ -73,6 +82,8 @@ final class StatsStore {
             asks = try container.decodeIfPresent(Int.self, forKey: .asks) ?? 0
             screens = try container.decodeIfPresent(Int.self, forKey: .screens) ?? 0
             maxAskWords = try container.decodeIfPresent(Int.self, forKey: .maxAskWords) ?? 0
+            durations = try container.decodeIfPresent([String: Int].self, forKey: .durations) ?? [:]
+            maxSeconds = try container.decodeIfPresent(Double.self, forKey: .maxSeconds) ?? 0
         }
     }
 
@@ -113,6 +124,12 @@ final class StatsStore {
         let hour = String(Calendar.current.component(.hour, from: now))
         day.hours[hour, default: 0] += 1
         day.maxWords = max(day.maxWords, words)
+        // Length breakdown belongs to the module: switched off, it records
+        // nothing at all rather than quietly filling a hidden chart.
+        if ModuleCatalog.isEnabled("stats") {
+            day.durations[Self.bucket(seconds), default: 0] += 1
+            day.maxSeconds = max(day.maxSeconds, seconds)
+        }
         if words >= Self.paceMinWords, seconds >= Self.paceMinSeconds {
             day.maxWordsPerMinute = max(day.maxWordsPerMinute, Double(words) / seconds * 60)
         }
@@ -181,6 +198,115 @@ final class StatsStore {
             day = previous
         }
         return streak
+    }
+
+    // MARK: - Length
+
+    /// Buckets from the "Настройки · Статистика" mockup, in display order. The
+    /// last one is open-ended.
+    static let durationBuckets: [(key: String, upTo: Double, label: String)] = [
+        ("0-5", 5, "до 5 с"),
+        ("5-15", 15, "5–15 с"),
+        ("15-30", 30, "15–30 с"),
+        ("30-60", 60, "30–60 с"),
+        ("60-120", 120, "1–2 мин"),
+        ("120-180", 180, "2–3 мин"),
+        ("180-300", 300, "3–5 мин"),
+        ("300-600", 600, "5–10 мин"),
+        ("600+", .infinity, "10+ мин"),
+    ]
+
+    static func bucket(_ seconds: Double) -> String {
+        durationBuckets.first { seconds < $0.upTo }?.key ?? "600+"
+    }
+
+    struct DurationBucket: Identifiable {
+        let id: String
+        let label: String
+        let count: Int
+    }
+
+    /// Counts per bucket, in display order — the chart reads this directly.
+    var durationHistogram: [DurationBucket] {
+        Self.durationBuckets.map { bucket in
+            DurationBucket(
+                id: bucket.key,
+                label: bucket.label,
+                count: days.values.reduce(0) { $0 + ($1.durations[bucket.key] ?? 0) }
+            )
+        }
+    }
+
+    var totalMeasuredDictations: Int {
+        durationHistogram.reduce(0) { $0 + $1.count }
+    }
+
+    /// Median length, interpolated inside the bucket that holds the middle
+    /// recording. Buckets are all we keep, so this is an estimate and the label
+    /// says "≈" — storing every duration to get one exact number isn't worth it.
+    var medianSeconds: Double {
+        let counts = durationHistogram.map(\.count)
+        let total = counts.reduce(0, +)
+        guard total > 0 else { return 0 }
+
+        var seen = 0
+        for (index, count) in counts.enumerated() where count > 0 {
+            if seen + count >= (total + 1) / 2 {
+                let bucket = Self.durationBuckets[index]
+                let lower = index == 0 ? 0 : Self.durationBuckets[index - 1].upTo
+                // The open-ended bucket has no upper edge to interpolate towards.
+                guard bucket.upTo.isFinite else { return lower }
+                let position = Double((total + 1) / 2 - seen) / Double(count)
+                return lower + (bucket.upTo - lower) * position
+            }
+            seen += count
+        }
+        return 0
+    }
+
+    /// Shares of the three coarse groups under the chart: up to 30 s, 30 s to
+    /// 3 min, longer.
+    var durationGroups: [(label: String, share: Double)] {
+        let counts = durationHistogram
+        let total = counts.reduce(0) { $0 + $1.count }
+        guard total > 0 else {
+            return [("до 30 с", 0), ("30 с – 3 мин", 0), ("дольше 3 мин", 0)]
+        }
+        func share(_ ids: [String]) -> Double {
+            Double(counts.filter { ids.contains($0.id) }.reduce(0) { $0 + $1.count }) / Double(total)
+        }
+        return [
+            ("до 30 с", share(["0-5", "5-15", "15-30"])),
+            ("30 с – 3 мин", share(["30-60", "60-120", "120-180"])),
+            ("дольше 3 мин", share(["180-300", "300-600", "600+"])),
+        ]
+    }
+
+    /// The longest dictation ever, in seconds.
+    var longestSeconds: Double {
+        days.values.map(\.maxSeconds).max() ?? 0
+    }
+
+    /// The same in minutes — what the achievements count in.
+    var longestMinutes: Double {
+        longestSeconds / 60
+    }
+
+    /// Dictations shorter than fifteen seconds, all time.
+    var shortDictations: Int {
+        durationHistogram
+            .filter { $0.id == "0-5" || $0.id == "5-15" }
+            .reduce(0) { $0 + $1.count }
+    }
+
+    /// How many buckets have anything in them.
+    var filledBuckets: Int {
+        durationHistogram.filter { $0.count > 0 }.count
+    }
+
+    /// The most speech in a single day, in minutes.
+    var bestMinutesInDay: Double {
+        (days.values.map(\.seconds).max() ?? 0) / 60
     }
 
     // MARK: - Records

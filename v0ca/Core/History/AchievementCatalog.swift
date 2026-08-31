@@ -32,6 +32,9 @@ struct AchievementCatalog: Decodable {
         var flag: String?
         /// All-or-nothing source: a fact recomputed from the current state.
         var condition: String?
+        /// Belongs to a module: the row is on the shelf only while that module is
+        /// on. Progress is kept — off means invisible, not wiped.
+        var module: String?
         /// How the number reads: "count" (default), "hours", "plain".
         var format: String?
         /// Shown while locked. A `%@` in it is filled with the formatted goal.

@@ -154,8 +154,8 @@ The audit script from step 8 has to walk modules too.
 This is the user-facing half of the whole exercise, and the only part of this
 plan that ships a visible feature.
 
-**Where.** Its own sidebar item, `Модули`, below `Разрешения`. Not a section
-inside `Общие`: that tab is already long, and a list that changes what the app
+**Where.** Its own sidebar item, Modules, below Permissions. Not a section
+inside General: that tab is already long, and a list that changes what the app
 consists of deserves its own place.
 
 **A row per module.** Title and one line of description from `AppModule`, an
@@ -163,8 +163,10 @@ consists of deserves its own place.
 Only optional modules appear; recording, transcription and insertion are the app
 and have no switch.
 
-**State** lives in `UserDefaults` under `module.<id>.enabled`, defaulting to on.
-A fresh install therefore behaves exactly as a build with no module system at all.
+**State** lives in `UserDefaults` under `module.<id>.enabled`, defaulting to
+**off** — see the rule in `OVERVIEW.md`. A fresh install therefore behaves
+exactly as a build with no module system at all, and every module in it is
+something the user asked for.
 
 **Turning one off** must take effect without a restart: the tab disappears from
 the sidebar, contributed HUD modes drop out of the bar menu, the module's hotkeys
@@ -176,7 +178,7 @@ dictation.
 
 **Dependencies between modules.** `AskFlow` cannot work without `Providers`.
 Rather than letting the user create a broken combination, a row whose requirement
-is off is shown disabled with the reason spelled out ("Требует «Провайдеры»"), and
+is off is shown disabled with the reason spelled out ("Requires Providers"), and
 switching off a module that others depend on asks for confirmation and takes them
 with it. `AppModule` gains `requires: [String]` for this.
 
@@ -193,7 +195,7 @@ Only after the above. A pack is a JSON file in Application Support, no code:
 
 ```json
 { "id": "pack.marathon", "group": "volume", "metric": "totalWords",
-  "goal": 1000000, "title": "Миллион слов", "icon": "book" }
+  "goal": 1000000, "title": "A million words", "icon": "book" }
 ```
 
 `metric` names something the app already counts. Unknown metrics are skipped, not

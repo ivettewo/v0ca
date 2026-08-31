@@ -10,6 +10,7 @@ struct SettingsRootView: View {
     enum Tab: String, CaseIterable {
         case dictation = "Диктовка"
         case general = "Общие"
+        case modules = "Модули"
         case models = "Модели"
         case providers = "Провайдеры"
         case sound = "Звук"
@@ -21,6 +22,7 @@ struct SettingsRootView: View {
             switch self {
             case .dictation: "mic"
             case .general: "gearshape"
+            case .modules: "square.grid.2x2"
             case .models: "cpu"
             case .providers: "key"
             case .sound: "speaker.wave.2"
@@ -29,6 +31,11 @@ struct SettingsRootView: View {
             case .stats: "chart.bar"
             }
         }
+
+        /// The tab draws the whole content sheet itself: no shared scroll view,
+        /// no padding and no header gradient. Modules need it — the split has a
+        /// column of its own that has to reach the edges.
+        var isFullBleed: Bool { self == .modules }
     }
 
     @Bindable var router: SettingsRouter
@@ -148,6 +155,10 @@ struct SettingsRootView: View {
     @ViewBuilder
     private var tabGradient: some View {
         switch tab {
+        case .modules:
+            // Deliberately none: the gradient would run under the list column
+            // and stain its background. The mockup has no gradient here either.
+            EmptyView()
         case .dictation:
             OnboardingGradient(
                 HeaderGradient.shortcuts,
@@ -200,6 +211,18 @@ struct SettingsRootView: View {
 
     @ViewBuilder
     private var content: some View {
+        if tab.isFullBleed {
+            switch tab {
+            case .modules: ModulesTab()
+            default: EmptyView()
+            }
+        } else {
+            scrollingContent
+        }
+    }
+
+    @ViewBuilder
+    private var scrollingContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
                 switch tab {
@@ -211,6 +234,8 @@ struct SettingsRootView: View {
                 case .permissions: PermissionsTab()
                 case .providers: ProvidersTab(keys: coordinator.providerKeys)
                 case .stats: StatsTab(coordinator: coordinator)
+                // Full-bleed tabs are drawn above, outside this container.
+                case .modules: EmptyView()
                 }
             }
             .padding(.horizontal, 24)
