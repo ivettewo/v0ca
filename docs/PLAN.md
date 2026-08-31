@@ -24,7 +24,7 @@ Stage outcome: the app can be used every day.
 
 ## Stage 2 — Settings and the model catalog
 
-1. **Settings window** 920×640 with a sidebar (General / Models / Sound / History) — per the `Экран · Настройки.dc.html` mockup.
+1. **Settings window** 920×640 with a sidebar (General / Models / Sound / History) — per the settings mockup in `design/`.
 2. **General**: push-to-talk, recognition language (auto-detection), translation to English, VAD, appending a space, editable hotkeys (4 of them), insertion method, launch at login, window hiding, menu-bar icon, HUD position, model auto-unload timer, interface language.
 3. **Models**: the full catalog (30–40 models, [MODELS.md](MODELS.md)): search, language filter, cards with description/size/accuracy/speed, download with progress, deletion, selecting the active one. The `TranscriptionEngine` abstraction for WhisperKit + FluidAudio.
 4. **Sound**: microphone selection, a level indicator with a test, start/end sound cues, ducking system audio during recording, output device.

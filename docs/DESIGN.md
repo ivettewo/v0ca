@@ -1,6 +1,6 @@
 # v0ca. — Design System
 
-Source: the mockups in `design/` — the design-system folder (design system, HUD, settings) plus the newer `Настройки · Новые экраны.dc.html` and `Онбординг · Финальные экраны.dc.html`. This document is a distilled set of tokens for the SwiftUI implementation (`DesignSystem/`).
+Source: the mockups in `design/` — the design-system folder (design system, HUD, settings) plus the newer settings and onboarding mockups. This document is a distilled set of tokens for the SwiftUI implementation (`DesignSystem/`).
 
 ## Fonts
 
@@ -81,4 +81,4 @@ The "v0ca." logo dot is always brand red `#E03E3E` (`Tokens.brand`) regardless o
 
 - 920×640, a 44px top bar with traffic lights, the "Settings" title centered.
 - Sidebar 208px: the "v0ca." logo (SF Mono 20/600), the tabs General / Models / Sound / History with 15px icons, "v 1.0.0" at the bottom.
-- The full contents of each tab are in the `Экран · Настройки.dc.html` mockup; cross-check with it during implementation.
+- The full contents of each tab are in the settings mockup in `design/`; cross-check with it during implementation.

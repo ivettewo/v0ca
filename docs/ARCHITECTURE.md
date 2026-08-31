@@ -21,7 +21,7 @@ v0ca/
 │   │   ├── WhisperKitEngine.swift       # the Whisper family (CoreML/ANE)
 │   │   ├── FluidAudioEngine.swift       # Parakeet and others
 │   │   └── ModelDescriptor.swift        # descriptors + JSON catalog loading
-│   ├── Localization.swift # AppLanguage (ru/en) + L("русский ключ") lookup table
+│   ├── Localization.swift # AppLanguage (ru/en); L() looks up the Russian source string
 │   ├── Insertion/        # text insertion: clipboard + CGEvent ⌘V
 │   └── History/          # JSON index + WAV files
 │       ├── StatsStore.swift        # daily aggregates in stats.json (words, chars, seconds, hours)
