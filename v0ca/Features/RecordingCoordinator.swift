@@ -76,20 +76,10 @@ final class RecordingCoordinator {
 
         // Push-to-talk: recording lasts while the key is held down.
         KeyboardShortcuts.onKeyDown(for: .toggleRecording) { [weak self] in
-            guard let self, self.isPushToTalk else { return }
-            if self.state == .hidden || self.state == .done {
-                self.start()
-            }
+            self?.recordingKeyDown()
         }
         KeyboardShortcuts.onKeyUp(for: .toggleRecording) { [weak self] in
-            guard let self else { return }
-            if self.isPushToTalk {
-                if self.state == .recording {
-                    self.finish()
-                }
-            } else {
-                self.toggle()
-            }
+            self?.recordingKeyUp()
         }
         KeyboardShortcuts.onKeyUp(for: .cancelRecording) { [weak self] in
             self?.cancel()
@@ -125,20 +115,12 @@ final class RecordingCoordinator {
         // The fn key (Carbon can't handle it) — a separate CGEventTap. Same logic
         // as the toggle hotkey, but only when the user has assigned fn.
         fnMonitor.onFnDown = { [weak self] in
-            guard let self, Prefs.toggleRecordingUsesFn, self.isPushToTalk else { return }
-            if self.state == .hidden || self.state == .done {
-                self.start()
-            }
+            guard Prefs.toggleRecordingUsesFn else { return }
+            self?.recordingKeyDown()
         }
         fnMonitor.onFnUp = { [weak self] in
-            guard let self, Prefs.toggleRecordingUsesFn else { return }
-            if self.isPushToTalk {
-                if self.state == .recording {
-                    self.finish()
-                }
-            } else {
-                self.toggle()
-            }
+            guard Prefs.toggleRecordingUsesFn else { return }
+            self?.recordingKeyUp()
         }
         fnMonitor.start()
 
@@ -156,6 +138,65 @@ final class RecordingCoordinator {
         fnMonitor.start()
     }
 
+    // MARK: - The recording key
+
+    /// Hands-free: a double tap left the recording running, so the key is no
+    /// longer holding it up. The next press ends it.
+    @ObservationIgnored private(set) var isLatched = false
+    /// When the current press began — a short tap is what starts a double tap.
+    @ObservationIgnored private var pressStartedAt: Date?
+    /// A finish waiting to see whether a second tap arrives.
+    @ObservationIgnored private var pendingFinish: Task<Void, Never>?
+
+    /// Longer than this and it was a real push-to-talk press, not a tap. Nothing
+    /// can be said in a quarter of a second, so nothing is lost by waiting on it.
+    private static let tapMaxDuration: TimeInterval = 0.25
+    /// How long the second tap of a double tap may take to arrive.
+    private static let doubleTapWindow: Duration = .milliseconds(350)
+
+    private func recordingKeyDown() {
+        // Toggle mode acts on key up; there is nothing to do on the way down.
+        guard isPushToTalk else { return }
+        pressStartedAt = Date()
+
+        // A press while hands-free is the stop.
+        if isLatched {
+            isLatched = false
+            if state == .recording { finish() }
+            return
+        }
+        // The second tap of a double tap: keep the recording, drop the key.
+        if pendingFinish != nil {
+            pendingFinish?.cancel()
+            pendingFinish = nil
+            isLatched = true
+            return
+        }
+        if state == .hidden || state == .done { start() }
+    }
+
+    private func recordingKeyUp() {
+        guard isPushToTalk else {
+            toggle()
+            return
+        }
+        guard state == .recording, !isLatched else { return }
+
+        let held = pressStartedAt.map { Date().timeIntervalSince($0) } ?? .infinity
+        // Only a tap waits: a normal held press ends the moment it is released,
+        // with no added latency.
+        guard Prefs.doublePressLatch, held < Self.tapMaxDuration else {
+            finish()
+            return
+        }
+        pendingFinish = Task { [weak self] in
+            try? await Task.sleep(for: Self.doubleTapWindow)
+            guard let self, !Task.isCancelled else { return }
+            self.pendingFinish = nil
+            if self.state == .recording { self.finish() }
+        }
+    }
+
     func toggle() {
         switch state {
         case .hidden, .done:
@@ -170,6 +211,9 @@ final class RecordingCoordinator {
     func cancel() {
         transcriptionTask?.cancel()
         transcriptionTask = nil
+        pendingFinish?.cancel()
+        pendingFinish = nil
+        isLatched = false
         pendingShot = nil
         if state == .recording {
             recorder.stop()
@@ -239,6 +283,8 @@ final class RecordingCoordinator {
     }
 
     private func finish() {
+        // However the recording ended — key, bar or Esc — the key is free again.
+        isLatched = false
         let samples = recorder.stop()
         level = 0
         state = .processing

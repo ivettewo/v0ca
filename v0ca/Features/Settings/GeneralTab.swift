@@ -7,6 +7,7 @@ struct GeneralTab: View {
 
     @AppStorage(Prefs.Key.recognitionLanguage) private var recognitionLanguage: String = "auto"
     @AppStorage(Prefs.Key.pushToTalk) private var pushToTalk: Bool = false
+    @AppStorage(Prefs.Key.doublePressLatch) private var doublePressLatch = false
     @AppStorage(Prefs.Key.unloadModelAfterMinutes) private var unloadAfterMinutes: Int = 15
     @AppStorage(Prefs.Key.translateToEnglish) private var translateToEnglish: Bool = false
     @AppStorage(Prefs.Key.appendSpace) private var appendSpace: Bool = true
@@ -58,6 +59,15 @@ struct GeneralTab: View {
         SettingsSection(title: L("Запись")) {
             SettingRow(title: L("Нажми и говори"), subtitle: L("Запись идёт, пока клавиша удерживается")) {
                 AccentToggle(isOn: $pushToTalk)
+            }
+            RowDivider()
+            SettingRow(
+                title: L("Двойное нажатие — запись без удержания"),
+                subtitle: pushToTalk
+                    ? L("Два быстрых нажатия оставляют запись включённой, следующее — останавливает")
+                    : L("Работает в режиме «Нажми и говори»")
+            ) {
+                AccentToggle(isOn: $doublePressLatch, enabled: pushToTalk)
             }
             RowDivider()
             SettingRow(title: L("Язык распознавания")) {

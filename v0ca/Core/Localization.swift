@@ -138,6 +138,10 @@ enum L10n {
         "Запись": "Recording",
         "Нажми и говори": "Push to talk",
         "Запись идёт, пока клавиша удерживается": "Records while the key is held",
+        "Двойное нажатие — запись без удержания": "Double tap — record without holding",
+        "Два быстрых нажатия оставляют запись включённой, следующее — останавливает":
+            "Two quick taps leave the recording running; the next tap stops it",
+        "Работает в режиме «Нажми и говори»": "Works in push-to-talk mode",
         "Язык распознавания": "Recognition language",
         "Переводить речь на английский автоматически": "Translate speech to English automatically",
         "Речь на любом языке распознаётся сразу английским текстом":

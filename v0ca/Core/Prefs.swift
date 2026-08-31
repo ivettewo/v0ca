@@ -48,6 +48,9 @@ enum Prefs {
         static let inputDeviceUID = "inputDeviceUID"
         static let activeModelID = "activeModelID"
         static let pushToTalk = "pushToTalk"
+        /// Double-tap the recording key to keep recording without holding it.
+        /// Push-to-talk only: in toggle mode one press already does this.
+        static let doublePressLatch = "doublePressLatch"
         static let unloadModelAfterMinutes = "unloadModelAfterMinutes"
     }
 
@@ -266,6 +269,10 @@ enum Prefs {
     }
 
     /// Use the fn key (🌐 Globe) as the recording trigger instead of a Carbon hotkey.
+    static var doublePressLatch: Bool {
+        UserDefaults.standard.bool(forKey: Key.doublePressLatch)
+    }
+
     static var toggleRecordingUsesFn: Bool {
         UserDefaults.standard.bool(forKey: Key.toggleRecordingUsesFn)
     }
