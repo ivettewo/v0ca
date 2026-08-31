@@ -46,9 +46,11 @@ struct HistoryTab: View {
     private var store: HistoryStore { coordinator.history }
 
     var body: some View {
-        // LazyVStack: with a large history only visible day cards are built,
-        // otherwise a hundred rows lay out at once and scrolling stutters.
-        LazyVStack(alignment: .leading, spacing: 22) {
+        // Not lazy: the day cards are few, and the rows inside them are the part
+        // worth deferring (HistoryRecordsCard is lazy). A LazyVStack here also
+        // kept stale row frames when the filter replaced the whole list, drawing
+        // one section over another.
+        VStack(alignment: .leading, spacing: 22) {
             settingsCard
 
             // Only worth showing once there is something to sort through.
@@ -59,6 +61,18 @@ struct HistoryTab: View {
                 )
             }
 
+            records
+        }
+    }
+
+    /// Switching the filter swaps the entire list, and the segmented control
+    /// wraps that change in an animation. Animating a wholesale replacement of
+    /// rows is what produced the overlap, so the list gets a fresh identity per
+    /// filter and no animation of its own: the chip still slides, the list just
+    /// appears.
+    @ViewBuilder
+    private var records: some View {
+        Group {
             if visibleRecords.isEmpty {
                 Text(L("Записей пока нет — продиктуйте что-нибудь."))
                     .font(Tokens.sans(12))
@@ -72,6 +86,8 @@ struct HistoryTab: View {
                 }
             }
         }
+        .id(filter)
+        .transaction { $0.animation = nil }
     }
 
     // MARK: - Settings (untitled card, per the mockup)
@@ -118,8 +134,7 @@ struct HistoryTab: View {
             }
         }
         .padding(.horizontal, 20)
-        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.radiusCard))
-        .overlay(RoundedRectangle(cornerRadius: Tokens.radiusCard).stroke(Tokens.cardBorder, lineWidth: 1))
+        .dsCard()
         .onDisappear { playback.stop() }
     }
 
