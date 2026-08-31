@@ -7,31 +7,9 @@ import OSLog
 /// current settings — only the handful of things the app would otherwise forget
 /// are persisted (see `AchievementsStore.Flag`).
 struct Achievement: Identifiable {
-    enum Group: String, CaseIterable {
-        case volume, dictations, streak, records, saved, rhythm
-        case questions, screens, asking, providers
-        case mastery
-
-        /// Section header. Russian base string — the key for `L()`.
-        var title: String {
-            switch self {
-            case .volume: "Объём"
-            case .dictations: "Диктовки"
-            case .streak: "Серия"
-            case .records: "Рекорды за день"
-            case .saved: "Сэкономленное время"
-            case .rhythm: "Ритм"
-            case .questions: "Вопросы"
-            case .screens: "Снимки экрана"
-            case .asking: "Как спрашиваешь"
-            case .providers: "Провайдеры"
-            case .mastery: "Освоение"
-            }
-        }
-    }
-
     let id: String
-    let group: Group
+    /// Group id from the catalog; the shelf takes the order and titles from there.
+    let group: String
     let title: String
     /// Caption under the title: what to do while locked, what was done once unlocked.
     let caption: String
@@ -109,324 +87,150 @@ final class AchievementsStore {
 
     // MARK: - Catalog
 
-    /// The full shelf, in display order. Progress is recomputed on every read —
-    /// cheap enough, and it keeps the tab in sync with stats without extra plumbing.
+    /// The full shelf, in the order the catalog file lists it. Progress is
+    /// recomputed on every read — cheap enough, and it keeps the tab in sync
+    /// with stats without extra plumbing.
+    ///
+    /// A row whose metric, flag or condition this build doesn't know is dropped:
+    /// a catalog from a newer version must not empty the shelf.
     func all(stats: StatsStore, models: ModelManager, history: HistoryStore) -> [Achievement] {
-        volume(stats) + dictations(stats) + streak(stats) + records(stats)
-            + saved(stats) + rhythm(stats) + questions(stats) + screens(stats)
-            + asking(stats) + providers() + mastery(models: models, history: history)
-    }
+        let metrics = metrics(stats: stats, models: models)
+        let conditions = conditions(stats: stats, history: history)
 
-    private func volume(_ stats: StatsStore) -> [Achievement] {
-        let total = stats.totalWords
-        let steps: [(String, String, Int, String)] = [
-            ("volume.first", "Первое слово", 1, "star"),
-            ("volume.1k", "Разговорился", 1_000, "text.bubble"),
-            ("volume.10k", "Десять тысяч", 10_000, "text.alignleft"),
-            ("volume.50k", "Роман", 50_000, "book"),
-            ("volume.100k", "Полка", 100_000, "books.vertical"),
-            ("volume.500k", "Собрание сочинений", 500_000, "building.columns"),
-        ]
-        return steps.map { id, title, goal, icon in
-            counted(
-                id: id, group: .volume, title: title, icon: icon,
-                value: id == "volume.first" ? stats.totalDictations : total, goal: goal,
-                caption: id == "volume.first"
-                    ? L("Продиктуйте что-нибудь в первый раз")
-                    : L("Расшифровать %@ слов", Self.grouped(goal))
-            )
+        return AchievementCatalog.shared.achievements.compactMap { entry in
+            if let name = entry.flag {
+                guard let flag = Flag(rawValue: name) else { return nil }
+                return flagged(entry, done: flags.contains(flag))
+            }
+            if let name = entry.condition {
+                guard let value = conditions[name] else { return nil }
+                return flagged(entry, done: value)
+            }
+            guard let name = entry.metric, let value = metrics[name] else { return nil }
+            let goal = entry.goalMetric.flatMap { metrics[$0] } ?? entry.goal
+            guard let goal, goal > 0 else { return nil }
+            return measured(entry, value: value, goal: goal)
         }
     }
 
-    private func dictations(_ stats: StatsStore) -> [Achievement] {
-        let steps: [(String, String, Int, String)] = [
-            ("dictations.10", "Разминка", 10, "figure.walk"),
-            ("dictations.100", "Сотня", 100, "figure.run"),
-            ("dictations.500", "Пятьсот", 500, "flame"),
-            ("dictations.1000", "Тысяча", 1_000, "medal"),
-            ("dictations.5000", "Пять тысяч", 5_000, "trophy"),
-        ]
-        return steps.map { id, title, goal, icon in
-            counted(
-                id: id, group: .dictations, title: title, icon: icon,
-                value: stats.totalDictations, goal: goal,
-                caption: L("Сделать %@ диктовок", Self.grouped(goal))
-            )
-        }
-    }
-
-    private func streak(_ stats: StatsStore) -> [Achievement] {
-        let steps: [(String, String, Int, String)] = [
-            ("streak.3", "Три дня", 3, "flame"),
-            ("streak.7", "Неделя", 7, "calendar"),
-            ("streak.30", "Месяц", 30, "calendar.badge.clock"),
-            ("streak.100", "Сто дней", 100, "seal"),
-            ("streak.365", "Год", 365, "crown"),
-        ]
-        return steps.map { id, title, goal, icon in
-            counted(
-                id: id, group: .streak, title: title, icon: icon,
-                value: stats.streakDays, goal: goal,
-                caption: L("Диктовать %@ дней подряд", Self.grouped(goal))
-            )
-        }
-    }
-
-    private func records(_ stats: StatsStore) -> [Achievement] {
-        [
-            counted(
-                id: "records.words.day", group: .records, title: "Продуктивный день",
-                icon: "sun.max", value: stats.bestWordsInDay, goal: 1_000,
-                caption: L("1 000 слов за сутки")
-            ),
-            counted(
-                id: "records.dictations.day", group: .records, title: "Без остановки",
-                icon: "bolt", value: stats.bestDictationsInDay, goal: 50,
-                caption: L("50 диктовок за сутки")
-            ),
-            counted(
-                id: "records.monologue", group: .records, title: "Монолог",
-                icon: "quote.bubble", value: stats.bestWordsInDictation, goal: 300,
-                caption: L("300 слов за одну диктовку")
-            ),
-            counted(
-                id: "records.long.monologue", group: .records, title: "Длинный монолог",
-                icon: "text.quote", value: stats.bestWordsInDictation, goal: 1_000,
-                caption: L("1 000 слов за одну диктовку")
-            ),
-        ]
-    }
-
-    private func saved(_ stats: StatsStore) -> [Achievement] {
-        let savedHours = stats.savedSeconds / 3600
-        let spokenHours = stats.totalSeconds / 3600
-        let steps: [(String, String, Double, Double, String, String)] = [
-            ("saved.1h", "Час свободы", savedHours, 1, "clock", "Сэкономить час против набора"),
-            ("saved.8h", "Рабочий день", savedHours, 8, "briefcase", "Сэкономить рабочий день"),
-            ("saved.40h", "Рабочая неделя", savedHours, 40, "calendar.badge.checkmark",
-             "Сэкономить рабочую неделю"),
-            ("saved.24h.spoken", "Сутки речи", spokenHours, 24, "waveform",
-             "Наговорить 24 часа"),
-        ]
-        return steps.map { id, title, value, goal, icon, hint in
-            Achievement(
-                id: id, group: .saved, title: title,
-                caption: value >= goal ? L("%@ ч — выполнено", Self.hours(value)) : L(hint),
-                icon: icon,
-                fraction: min(1, value / goal),
-                progressLabel: value >= goal ? nil : Self.hours(value)
-            )
-        }
-    }
-
-    private func rhythm(_ stats: StatsStore) -> [Achievement] {
-        [
-            flagged(
-                id: "rhythm.early", group: .rhythm, title: "Жаворонок", icon: "sunrise",
-                done: stats.hasEarlyBird, caption: L("Продиктовать между 05:00 и 08:00")
-            ),
-            flagged(
-                id: "rhythm.night", group: .rhythm, title: "Сова", icon: "moon.stars",
-                done: stats.hasNightOwl, caption: L("Продиктовать между 00:00 и 04:00")
-            ),
-            flagged(
-                id: "rhythm.weekend", group: .rhythm, title: "Выходной", icon: "beach.umbrella",
-                done: stats.hasWeekend, caption: L("Продиктовать в субботу или воскресенье")
-            ),
-            Achievement(
-                id: "rhythm.pace", group: .rhythm, title: "Скороговорка",
-                caption: stats.bestWordsPerMinute >= 150
-                    ? L("Лучший темп — %@ слов в минуту", "\(Int(stats.bestWordsPerMinute))")
-                    : L("Продиктовать быстрее 150 слов в минуту"),
-                icon: "hare",
-                fraction: min(1, stats.bestWordsPerMinute / 150),
-                progressLabel: stats.bestWordsPerMinute >= 150
-                    ? nil : "\(Int(stats.bestWordsPerMinute))"
-            ),
-        ]
-    }
-
-    private func questions(_ stats: StatsStore) -> [Achievement] {
-        let steps: [(String, String, Int, String)] = [
-            ("ask.1", "Первый вопрос", 1, "bubble.left"),
-            ("ask.10", "Любопытный", 10, "questionmark.bubble"),
-            ("ask.100", "Собеседник", 100, "bubble.left.and.bubble.right"),
-            ("ask.500", "Не отстанет", 500, "text.bubble"),
-        ]
-        return steps.map { id, title, goal, icon in
-            counted(
-                id: id, group: .questions, title: title, icon: icon,
-                value: stats.totalAsks, goal: goal,
-                caption: L("Задать %@ вопросов голосом", Self.grouped(goal))
-            )
-        }
-    }
-
-    private func screens(_ stats: StatsStore) -> [Achievement] {
-        let steps: [(String, String, Int, String)] = [
-            ("screen.1", "Первый снимок", 1, "camera.viewfinder"),
-            ("screen.25", "Насмотренный", 25, "display"),
-            ("screen.100", "Сто экранов", 100, "rectangle.on.rectangle"),
-        ]
-        return steps.map { id, title, goal, icon in
-            counted(
-                id: id, group: .screens, title: title, icon: icon,
-                value: stats.totalScreens, goal: goal,
-                caption: L("Отправить %@ снимков экрана", Self.grouped(goal))
-            )
-        }
-    }
-
-    private func asking(_ stats: StatsStore) -> [Achievement] {
-        [
-            flagged(
-                id: "asking.both", group: .asking, title: "Оба режима", icon: "arrow.triangle.swap",
-                done: stats.totalAsks > 0 && stats.totalScreens > 0,
-                caption: L("Спросить и голосом, и по экрану")
-            ),
-            flagged(
-                id: "asking.silent", group: .asking, title: "Молча", icon: "camera",
-                done: flags.contains(.silentScreen),
-                caption: L("Отправить снимок, ничего не сказав")
-            ),
-            counted(
-                id: "asking.long", group: .asking, title: "Развёрнутый вопрос", icon: "text.alignleft",
-                value: stats.bestAskWords, goal: 100,
-                caption: L("Задать вопрос длиннее 100 слов")
-            ),
-            flagged(
-                id: "asking.cancelled", group: .asking, title: "Передумал", icon: "arrow.uturn.left",
-                done: flags.contains(.askCancelled),
-                caption: L("Отменить вопрос во время отсчёта")
-            ),
-            flagged(
-                id: "asking.again", group: .asking, title: "Не устроило", icon: "arrow.clockwise",
-                done: flags.contains(.regenerated),
-                caption: L("Перегенерировать ответ")
-            ),
-            flagged(
-                id: "asking.patient", group: .asking, title: "Терпеливый", icon: "hourglass",
-                done: flags.contains(.patientAnswer),
-                caption: L("Дождаться ответа дольше 30 секунд")
-            ),
-        ]
-    }
-
-    private func providers() -> [Achievement] {
+    /// Everything countable, by the name the catalog uses.
+    private func metrics(stats: StatsStore, models: ModelManager) -> [String: Double] {
         let answered = ProviderCatalog.all
             .compactMap { Self.flag(forProvider: $0.id) }
             .filter(flags.contains)
             .count
-        return [
-            counted(
-                id: "providers.2", group: .providers, title: "Второе мнение",
-                icon: "person.2", value: answered, goal: 2,
-                caption: L("Получить ответы от двух разных провайдеров")
-            ),
-            counted(
-                id: "providers.all", group: .providers, title: "Полный набор",
-                icon: "square.grid.2x2", value: answered, goal: ProviderCatalog.all.count,
-                caption: L("Получить ответы от всех провайдеров")
-            ),
-        ]
-    }
-
-    private func mastery(models: ModelManager, history: HistoryStore) -> [Achievement] {
-        let defaults = UserDefaults.standard
-        let hotkeyChanged = KeyboardShortcuts.Name.toggleRecording.shortcut
-            != KeyboardShortcuts.Name.toggleRecording.defaultShortcut
-        let styleChanged = AccentStore.shared.hex.uppercased() != "E03E3E"
-            || defaults.string(forKey: Prefs.Key.appTheme) != nil
         let downloaded = models.itemStates.values.filter { $0 == .downloaded }.count
         let engines = [Flag.engineWhisperKit, .engineFluidAudio].filter(flags.contains).count
 
         return [
-            flagged(
-                id: "mastery.hotkey", group: .mastery, title: "Настроено под себя",
-                icon: "command", done: hotkeyChanged, caption: L("Сменить горячую клавишу")
-            ),
-            flagged(
-                id: "mastery.fn", group: .mastery, title: "Один палец", icon: "hand.point.up",
-                done: Prefs.toggleRecordingUsesFn, caption: L("Включить запись по клавише fn")
-            ),
-            flagged(
-                id: "mastery.style", group: .mastery, title: "Свой стиль", icon: "paintpalette",
-                done: styleChanged, caption: L("Сменить тему или акцентный цвет")
-            ),
-            flagged(
-                id: "mastery.mic", group: .mastery, title: "Свой микрофон", icon: "mic.badge.plus",
-                done: defaults.string(forKey: Prefs.Key.inputDeviceUID) != nil,
-                caption: L("Выбрать другое устройство ввода")
-            ),
-            counted(
-                id: "mastery.models", group: .mastery, title: "Вторая модель", icon: "square.stack",
-                value: downloaded, goal: 2, caption: L("Скачать вторую модель")
-            ),
-            counted(
-                id: "mastery.engines", group: .mastery, title: "Оба движка", icon: "arrow.triangle.swap",
-                value: engines, goal: 2, caption: L("Продиктовать через оба движка")
-            ),
-            flagged(
-                id: "mastery.language", group: .mastery, title: "Переключил язык", icon: "globe",
-                done: defaults.string(forKey: Prefs.Key.interfaceLanguage) != nil,
-                caption: L("Сменить язык интерфейса")
-            ),
-            flagged(
-                id: "mastery.favorite", group: .mastery, title: "Избранное", icon: "star",
-                done: flags.contains(.favorite) || history.records.contains(where: \.favorite),
-                caption: L("Отметить запись звёздочкой")
-            ),
-            flagged(
-                id: "mastery.playback", group: .mastery, title: "Переслушал", icon: "play.circle",
-                done: flags.contains(.playback), caption: L("Воспроизвести запись из истории")
-            ),
-            flagged(
-                id: "mastery.retranscribe", group: .mastery, title: "Второй заход",
-                icon: "arrow.clockwise", done: flags.contains(.retranscribe),
-                caption: L("Транскрибировать старую запись заново")
-            ),
-            flagged(
-                id: "mastery.onboarding", group: .mastery, title: "Готов к работе",
-                icon: "checkmark.seal", done: Prefs.onboardingDone,
-                caption: L("Пройти онбординг целиком")
-            ),
+            "words": Double(stats.totalWords),
+            "dictations": Double(stats.totalDictations),
+            "streakDays": Double(stats.streakDays),
+            "bestWordsInDay": Double(stats.bestWordsInDay),
+            "bestDictationsInDay": Double(stats.bestDictationsInDay),
+            "bestWordsInDictation": Double(stats.bestWordsInDictation),
+            "bestWordsPerMinute": stats.bestWordsPerMinute,
+            "savedHours": stats.savedSeconds / 3600,
+            "spokenHours": stats.totalSeconds / 3600,
+            "asks": Double(stats.totalAsks),
+            "screens": Double(stats.totalScreens),
+            "bestAskWords": Double(stats.bestAskWords),
+            "providersAnswered": Double(answered),
+            "providersTotal": Double(ProviderCatalog.all.count),
+            "downloadedModels": Double(downloaded),
+            "enginesUsed": Double(engines),
+        ]
+    }
+
+    /// Facts that are true or not, read from the current state rather than
+    /// remembered. Flags are for what leaves no trace; these leave one.
+    private func conditions(stats: StatsStore, history: HistoryStore) -> [String: Bool] {
+        let defaults = UserDefaults.standard
+        return [
+            "earlyBird": stats.hasEarlyBird,
+            "nightOwl": stats.hasNightOwl,
+            "weekend": stats.hasWeekend,
+            "askedBothWays": stats.totalAsks > 0 && stats.totalScreens > 0,
+            "hotkeyChanged": KeyboardShortcuts.Name.toggleRecording.shortcut
+                != KeyboardShortcuts.Name.toggleRecording.defaultShortcut,
+            "fnHotkey": Prefs.toggleRecordingUsesFn,
+            "styleChanged": AccentStore.shared.hex.uppercased() != "E03E3E"
+                || defaults.string(forKey: Prefs.Key.appTheme) != nil,
+            "micPicked": defaults.string(forKey: Prefs.Key.inputDeviceUID) != nil,
+            "languageChanged": defaults.string(forKey: Prefs.Key.interfaceLanguage) != nil,
+            "hasFavorite": flags.contains(.favorite) || history.records.contains(where: \.favorite),
+            "onboardingDone": Prefs.onboardingDone,
         ]
     }
 
     // MARK: - Builders
 
-    /// Measurable achievement: the ring shows "current/goal" while locked.
-    private func counted(
-        id: String, group: Achievement.Group, title: String, icon: String,
-        value: Int, goal: Int, caption: String
-    ) -> Achievement {
+    /// Measurable achievement: the ring shows the current value while locked.
+    /// `format` decides how both the value and the goal read — plain counts are
+    /// grouped ("1 240"), hours get one decimal below ten.
+    private func measured(_ entry: AchievementCatalog.Entry, value: Double, goal: Double) -> Achievement {
         let done = value >= goal
+        let format = entry.format ?? "count"
+        let label = Self.label(value, format: format)
+
+        let caption: String
+        if done, let template = entry.doneCaption {
+            caption = L(template, label)
+        } else if done {
+            caption = Self.doneCaption(value: value, goal: goal, format: format)
+        } else if entry.caption.contains("%@") {
+            caption = L(entry.caption, Self.label(goal, format: format))
+        } else {
+            caption = L(entry.caption)
+        }
+
         return Achievement(
-            id: id, group: group, title: title,
-            // A goal of one is a yes/no thing — "400 out of 1" would read as nonsense.
-            caption: done
-                ? (goal == 1
-                    ? L("Выполнено")
-                    : L("%@ из %@ — выполнено", Self.grouped(value), Self.grouped(goal)))
-                : caption,
-            icon: icon,
-            fraction: min(1, Double(value) / Double(goal)),
-            // Only the current value: 52pt of ring can't hold "10.2k/500k", and the
-            // goal is already spelled out in the caption.
-            progressLabel: done ? nil : Self.compact(value)
+            id: entry.id, group: entry.group, title: entry.title,
+            caption: caption,
+            icon: entry.icon,
+            fraction: min(1, value / goal),
+            // Only the current value: 52pt of ring can't hold "10.2k/500k", and
+            // the goal is already spelled out in the caption.
+            progressLabel: done ? nil : Self.ringLabel(value, format: format)
         )
     }
 
     /// All-or-nothing achievement: no progress to show, the ring keeps a muted icon.
-    private func flagged(
-        id: String, group: Achievement.Group, title: String, icon: String,
-        done: Bool, caption: String
-    ) -> Achievement {
+    private func flagged(_ entry: AchievementCatalog.Entry, done: Bool) -> Achievement {
         Achievement(
-            id: id, group: group, title: title,
-            caption: done ? L("Выполнено") : caption,
-            icon: icon, fraction: done ? 1 : 0, progressLabel: nil
+            id: entry.id, group: entry.group, title: entry.title,
+            caption: done ? L("Выполнено") : L(entry.caption),
+            icon: entry.icon, fraction: done ? 1 : 0, progressLabel: nil
         )
+    }
+
+    private static func doneCaption(value: Double, goal: Double, format: String) -> String {
+        switch format {
+        case "hours":
+            return L("%@ ч — выполнено", hours(value))
+        default:
+            // A goal of one is a yes/no thing — "400 out of 1" would read as nonsense.
+            guard goal > 1 else { return L("Выполнено") }
+            return L("%@ из %@ — выполнено", grouped(Int(value)), grouped(Int(goal)))
+        }
+    }
+
+    /// Inside a caption: full and grouped.
+    private static func label(_ value: Double, format: String) -> String {
+        switch format {
+        case "hours": hours(value)
+        case "plain": "\(Int(value))"
+        default: grouped(Int(value))
+        }
+    }
+
+    /// Inside the ring: short enough for 52pt.
+    private static func ringLabel(_ value: Double, format: String) -> String {
+        switch format {
+        case "hours": hours(value)
+        case "plain": "\(Int(value))"
+        default: compact(Int(value))
+        }
     }
 
     // MARK: - Formatting

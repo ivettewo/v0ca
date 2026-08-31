@@ -12,8 +12,8 @@ struct AchievementsShelf: View {
         VStack(alignment: .leading, spacing: 22) {
             SectionLabel(L("Достижения · %@ из %@", "\(unlocked)", "\(achievements.count)"))
 
-            ForEach(Achievement.Group.allCases, id: \.self) { group in
-                let rows = achievements.filter { $0.group == group }
+            ForEach(AchievementCatalog.shared.groups) { group in
+                let rows = achievements.filter { $0.group == group.id }
                 if !rows.isEmpty {
                     VStack(alignment: .leading, spacing: 9) {
                         SectionLabel(
@@ -28,11 +28,7 @@ struct AchievementsShelf: View {
                                 AchievementRow(achievement: item)
                             }
                         }
-                        .background(Tokens.surface, in: RoundedRectangle(cornerRadius: Tokens.radiusCard))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Tokens.radiusCard)
-                                .stroke(Tokens.cardBorder, lineWidth: 1)
-                        )
+                        .dsCard()
                         .clipShape(RoundedRectangle(cornerRadius: Tokens.radiusCard))
                     }
                 }
