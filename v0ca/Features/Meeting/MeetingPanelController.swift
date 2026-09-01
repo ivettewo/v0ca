@@ -20,11 +20,15 @@ private final class MeetingPanel: NSPanel {
 @MainActor
 final class MeetingPanelController {
     private let panel: MeetingPanel
+    private let answerPanel: MeetingPanel
     private let coordinator: RecordingCoordinator
+    private var answerWatcher: Task<Void, Never>?
 
-    /// Geometry from the mockup: 372 wide, 16 clear of three edges.
+    /// Geometry from the mockup: 372 wide, 16 clear of three edges, and the
+    /// answer 340 × 452 beside it.
     private static let width: CGFloat = 372
     private static let inset: CGFloat = 16
+    private static let answerSize = NSSize(width: 340, height: 452)
 
     init(coordinator: RecordingCoordinator) {
         self.coordinator = coordinator
@@ -45,12 +49,46 @@ final class MeetingPanelController {
         // being transcribed back at them.
         panel.sharingType = .none
 
+        answerPanel = MeetingPanel(
+            contentRect: NSRect(origin: .zero, size: Self.answerSize),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        for window in [panel, answerPanel] {
+            window.isFloatingPanel = true
+            window.level = .floating
+            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+            window.backgroundColor = .clear
+            window.isOpaque = false
+            window.hasShadow = false
+            window.hidesOnDeactivate = false
+            window.sharingType = .none
+        }
+
+        let answerHost = NSHostingView(rootView: MeetingAnswerView(coordinator: coordinator))
+        answerHost.wantsLayer = true
+        answerHost.layer?.backgroundColor = .clear
+        answerPanel.contentView = answerHost
+
         let host = NSHostingView(rootView: MeetingPanelView(coordinator: coordinator))
         // Without this the layer keeps its opaque backing and the rounded
         // corners cut into black instead of the desktop.
         host.wantsLayer = true
         host.layer?.backgroundColor = .clear
         panel.contentView = host
+
+        // The answer window follows the answer itself: no separate command to
+        // open or close it, it is simply there while there is something in it.
+        answerWatcher = Task { [weak self] in
+            while !Task.isCancelled {
+                let wanted = coordinator.meetingAnswer.isVisible && (self?.isVisible ?? false)
+                if wanted != (self?.answerPanel.isVisible ?? false) {
+                    wanted == true ? self?.showAnswer() : self?.answerPanel.orderOut(nil)
+                }
+                try? await Task.sleep(for: .milliseconds(200))
+            }
+        }
     }
 
     var isVisible: Bool { panel.isVisible }
@@ -65,6 +103,21 @@ final class MeetingPanelController {
 
     func hide() {
         panel.orderOut(nil)
+        answerPanel.orderOut(nil)
+    }
+
+    private func showAnswer() {
+        let frame = panel.frame
+        answerPanel.setFrame(
+            NSRect(
+                x: frame.minX - Self.answerSize.width - 8,
+                y: frame.maxY - Self.answerSize.height,
+                width: Self.answerSize.width,
+                height: Self.answerSize.height
+            ),
+            display: true
+        )
+        answerPanel.orderFrontRegardless()
     }
 
     func toggle() {

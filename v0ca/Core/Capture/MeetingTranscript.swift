@@ -28,6 +28,9 @@ final class MeetingTranscript {
     /// "waiting for the next line".
     private(set) var isWorking = false
 
+    /// Called with the whole conversation each time a line is added.
+    @ObservationIgnored var onLine: (([MeetingLine]) -> Void)?
+
     @ObservationIgnored private let models: ModelManager
     @ObservationIgnored private var segmenters: [MeetingRecorder.Side: SpeechSegmenter] = [
         .me: SpeechSegmenter(),
@@ -46,6 +49,7 @@ final class MeetingTranscript {
     func reset() {
         lines = []
         title = ""
+        onLine = nil
         pending = []
         segmenters = [.me: SpeechSegmenter(), .them: SpeechSegmenter()]
     }
@@ -102,6 +106,7 @@ final class MeetingTranscript {
             let line = MeetingLine(side: side, startedAt: utterance.startedAt, text: trimmed)
             insert(line)
             MeetingCaptureProbe.shared.note(line)
+            onLine?(lines)
         } catch {
             log.error("Реплика не распознана: \(error)")
         }

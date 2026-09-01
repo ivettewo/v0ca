@@ -562,7 +562,55 @@ enum L10n {
         "Все модули идут с приложением — скачивать нечего.":
             "Every module ships with the app — there is nothing to download.",
 
+        // Meetings tab
+        "Митинги": "Meetings",
+        "Митингов": "Meetings",
+        "Часов записано": "Hours recorded",
+        "Реплик": "Lines",
+        "Последний": "Last one",
+        "Поиск по разговорам": "Search conversations",
+        "Ничего не нашлось.": "Nothing found.",
+        "Разговоры": "Conversations",
+        "Разговоров пока нет — начните первый в панели.":
+            "No conversations yet — start the first one in the panel.",
+        "%@ · %@ реплик": "%@ · %@ lines",
+        "Режим разговора": "Conversation mode",
+        "Профиль": "Profile",
+        "Собеседование": "Interview",
+        "Встреча": "Meeting",
+        "Свой": "Custom",
+        "Короткие реплики, ответ нужен быстро": "Short turns, an answer is needed fast",
+        "Длинные реплики, лучше не резать на полуслове":
+            "Long turns, better not cut mid-sentence",
+        "Значения заданы вручную": "Set by hand",
+        "Порог срабатывания": "Trigger threshold",
+        "Тише этого уровня звук считается тишиной, а не речью":
+            "Quieter than this counts as silence, not speech",
+        "Окно нарезки реплик": "Segmentation window",
+        "Через сколько секунд сплошная речь режется, не дожидаясь паузы":
+            "After how many seconds unbroken speech is cut without waiting for a pause",
+        "Значения применяются к следующему разговору: менять их посреди звонка — значит двигать границу между репликами.":
+            "The values apply to the next conversation: changing them mid-call would move the boundary between lines.",
+
+        "Вопросы собеседника панель находит сама, и за это приходится платить: реплики собеседника уходят выбранной модели, чтобы она решила, вопрос это или нет. Правилом по знаку вопроса не обойтись — «расскажите про опыт с…» тоже вопрос. Ответ приходит вторым окном по кнопке рядом с репликой.":
+            "The panel finds the other side's questions by itself, and that has a price: their lines go to the chosen model, which decides whether a question was asked. A rule about question marks would not do — “tell me about your experience with…” is a question too. The answer arrives in a second window, from the button beside the line.",
+
+        "Вопросы": "Questions",
+        "Порог уверенности": "Confidence threshold",
+        "Ниже этого панель промолчит — ложная отметка мешает больше, чем пропущенный вопрос":
+            "Below this the panel stays quiet — a false mark costs more than a missed question",
+        "Автоответ на вопросы": "Answer questions automatically",
+        "Ответ приходит сам, без нажатия — окно откроется прямо во время разговора":
+            "The answer arrives on its own — the window opens while the call is still going",
+        "Клавиши в панели": "Keys in the panel",
+        "Ответить на вопрос": "Answer the question",
+        "Работает, пока панель в фокусе": "Works while the panel has focus",
+        "Скопировать вопрос": "Copy the question",
+
         // Meeting panel
+        "Ответ": "Answer",
+        "Копия": "Copy",
+        "Ищу ответ…": "Looking for an answer…",
         "Митинг": "Meeting",
         "Обе стороны звонка · расшифровка на устройстве":
             "Both sides of the call · transcribed on device",

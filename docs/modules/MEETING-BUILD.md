@@ -19,14 +19,17 @@ A step is finished when its acceptance check passes, not when the code compiles.
 | 1 | Two audio streams | done |
 | 2 | Segmentation and rolling transcription | done, thresholds not yet tuned on a real call |
 | 3 | The panel | done, minus the header buttons and the summary |
-| 4 | Questions and answers | blocked on a decision |
-| 5 | The Meetings tab | not started |
+| 4 | Questions and answers | done |
+| 5 | The Meetings tab | done, minus what steps 4 and 6 would fill in |
 | 6 | Knowledge base with citations | not started |
 
-Two decisions in `MEETING.md` block step 4 and step 6: how questions are detected
-(a classifier that sends every line out, versus heuristics that miss indirect
-questions), and whether the knowledge base may index through a network embedding
-model. Steps 1–3 do not depend on either.
+**Decided for step 4: the classifier.** Every line from the other side goes to
+the chosen model, which returns one judgement. A rule about question marks was
+rejected — it misses indirect requests and fires on rhetorical ones. The promise
+on the panel was rewritten to say so rather than quietly broken.
+
+Step 6 still waits on its own decision: whether the knowledge base may index
+through a network embedding model.
 
 ---
 
@@ -181,6 +184,44 @@ progress and a staleness marker.
 
 Newest entry at the top. One entry per finished step, or per attempt that taught
 something. Say what changed, what broke, and what the plan got wrong.
+
+### Steps 4–5 — questions, answers, and the tab
+
+**Catching questions.** `QuestionCatcher` sends the last eight lines after every
+line from the other side and asks for `{is_question, question, confidence}`.
+Below the threshold it stays quiet; own lines are never classified; a question
+already shown or answered never returns; a second classification never starts on
+top of a first. This is the mind-wiki approach, checked against its wiring rather
+than guessed: there is no heuristic prefilter there either, and the reason is
+written down — indirect requests carry no question mark.
+
+Cost of the decision, stated in the module page: the other side's lines leave the
+Mac continuously while a call runs.
+
+**Answering.** `MeetingAnswer` asks once per question, with six lines of context
+— "and how long did that take?" means nothing alone. The answer gets a window of
+its own, 340×452 to the left of the panel, which appears when there is something
+in it and leaves when it is dismissed; no command opens or closes it.
+
+`⌘↵` and `⌘C` are bound with SwiftUI's `keyboardShortcut` on the buttons
+themselves, so they only fire while the panel holds the keys. That is the whole
+answer to the "global ⌘C would break the machine" problem in `MEETING.md`.
+
+**The tab.** Title with the section pill on the right, a metrics card, and the
+conversation list with search — rebuilt once against the mockup after the first
+attempt turned out to be a stats-tab layout in disguise. Settings: profile
+presets, the two segmentation knobs, the confidence threshold, auto-answer, and
+the panel's keys.
+
+**One bug worth remembering:** picking a profile preset set both numbers, and the
+sliders' change handler immediately flipped the profile to "custom" — the preset
+un-selected itself. Fixed by making "custom" a consequence of *dragging*, not of
+the value changing.
+
+**Not built, and why:** the questions-of-the-week block, the task and question
+counts on each conversation, and the summary line. All three need either step 6
+or a summarizing pass that does not exist yet. Showing them empty would be
+furniture pretending to be a feature.
 
 ### Steps 1–3 — capture, transcript, panel
 

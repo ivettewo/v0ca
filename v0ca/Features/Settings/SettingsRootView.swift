@@ -14,6 +14,7 @@ struct SettingsRootView: View {
         case models = "Модели"
         case providers = "Провайдеры"
         case sound = "Звук"
+        case meetings = "Митинги"
         case history = "История"
         case permissions = "Разрешения"
         case stats = "Статистика"
@@ -26,9 +27,22 @@ struct SettingsRootView: View {
             case .models: "cpu"
             case .providers: "key"
             case .sound: "speaker.wave.2"
+            case .meetings: "bubble.left.and.bubble.right"
             case .history: "clock.arrow.circlepath"
             case .permissions: "checkmark.shield"
             case .stats: "chart.bar"
+            }
+        }
+
+        /// Tabs a module brings in: absent from the sidebar while it is off.
+        var moduleID: String? {
+            self == .meetings ? "meeting" : nil
+        }
+
+        /// The tabs on offer right now.
+        static var available: [Self] {
+            allCases.filter { tab in
+                tab.moduleID.map(ModuleCatalog.isEnabled) ?? true
             }
         }
 
@@ -72,7 +86,7 @@ struct SettingsRootView: View {
                 .padding(.horizontal, 11)
                 .padding(.vertical, 9)
 
-            ForEach(Tab.allCases.filter { $0 != .dictation && $0 != .stats }, id: \.self) { item in
+            ForEach(Tab.available.filter { $0 != .dictation && $0 != .stats }, id: \.self) { item in
                 tabButton(item)
             }
 
@@ -201,6 +215,11 @@ struct SettingsRootView: View {
                 HeaderGradient.modelIntro,
                 height: 400, fade: (from: 0.16, to: 0.6)
             )
+        case .meetings:
+            OnboardingGradient(
+                HeaderGradient.modelIntro,
+                height: 400, fade: (from: 0.16, to: 0.6)
+            )
         case .stats:
             OnboardingGradient(
                 HeaderGradient.stats,
@@ -234,6 +253,7 @@ struct SettingsRootView: View {
                 case .permissions: PermissionsTab()
                 case .providers: ProvidersTab(keys: coordinator.providerKeys)
                 case .stats: StatsTab(coordinator: coordinator)
+                case .meetings: MeetingsTab(coordinator: coordinator)
                 // Full-bleed tabs are drawn above, outside this container.
                 case .modules: EmptyView()
                 }

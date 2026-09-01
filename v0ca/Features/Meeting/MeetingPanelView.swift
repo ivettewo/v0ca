@@ -13,6 +13,7 @@ struct MeetingPanelView: View {
 
     private var recorder: MeetingRecorder { coordinator.meeting }
     private var transcript: MeetingTranscript { coordinator.meetingTranscript }
+    private var questions: QuestionCatcher { coordinator.meetingQuestions }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -122,12 +123,13 @@ struct MeetingPanelView: View {
     /// shape carries the speaker, so no label has to.
     private func bubble(_ line: MeetingLine) -> some View {
         let mine = line.side == .me
+        let asked = questions.caught?.lineID == line.id
         return HStack {
             if mine { Spacer(minLength: 40) }
             Text(line.text)
                 .font(Tokens.sans(13.5))
                 .lineSpacing(4)
-                .foregroundStyle(mine ? Tokens.text : Tokens.textOnAccent)
+                .foregroundStyle(mine && !asked ? Tokens.text : Tokens.textOnAccent)
                 .padding(.horizontal, 15)
                 .padding(.vertical, 11)
                 .background(
@@ -137,7 +139,7 @@ struct MeetingPanelView: View {
                         bottomTrailingRadius: mine ? 8 : 20,
                         topTrailingRadius: 20
                     )
-                    .fill(mine ? Tokens.surface : Tokens.text)
+                    .fill(asked ? Tokens.accent : (mine ? Tokens.surface : Tokens.text))
                 )
                 .overlay(
                     UnevenRoundedRectangle(
@@ -150,6 +152,49 @@ struct MeetingPanelView: View {
                 )
                 .frame(maxWidth: 284, alignment: mine ? .trailing : .leading)
             if !mine { Spacer(minLength: 40) }
+        }
+        // The question the panel caught carries its own actions, so the offer is
+        // where the question is rather than in a corner somewhere.
+        .overlay(alignment: .bottomLeading) {
+            if asked {
+                questionActions
+                    .offset(y: 20)
+            }
+        }
+        .padding(.bottom, asked ? 24 : 0)
+    }
+
+    private var questionActions: some View {
+        HStack(spacing: 6) {
+            Button {
+                coordinator.answerCaughtQuestion()
+            } label: {
+                Text(L("Ответ"))
+                    .font(Tokens.sans(12, weight: .medium))
+                    .foregroundStyle(Tokens.accentHover)
+            }
+            .buttonStyle(.plain)
+            .pointerCursor()
+            // Bound to the panel, not the system: it fires only while this
+            // window has the keys, so ⌘C keeps meaning copy everywhere else.
+            .keyboardShortcut(.return, modifiers: .command)
+
+            Text("·")
+                .font(Tokens.sans(12))
+                .foregroundStyle(Tokens.text3)
+
+            Button {
+                guard let caught = questions.caught else { return }
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(caught.question, forType: .string)
+            } label: {
+                Text(L("Копия"))
+                    .font(Tokens.sans(12, weight: .medium))
+                    .foregroundStyle(Tokens.text2)
+            }
+            .buttonStyle(.plain)
+            .pointerCursor()
+            .keyboardShortcut("c", modifiers: .command)
         }
     }
 

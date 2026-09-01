@@ -36,6 +36,10 @@ final class RecordingCoordinator {
     /// the meeting module is on — steps 1–2 of docs/modules/MEETING-BUILD.md.
     let meeting = MeetingRecorder()
     let meetingTranscript: MeetingTranscript
+    /// Watches the other side's lines for a question worth answering, and the
+    /// answer when one is asked for.
+    let meetingQuestions: QuestionCatcher
+    let meetingAnswer: MeetingAnswer
 
     var modelState: ModelManager.LoadState { models.loadState }
 
@@ -81,6 +85,8 @@ final class RecordingCoordinator {
             stats: stats, achievements: achievements
         )
         meetingTranscript = MeetingTranscript(models: models)
+        meetingQuestions = QuestionCatcher(keys: providerKeys)
+        meetingAnswer = MeetingAnswer(keys: providerKeys)
 
         // Push-to-talk: recording lasts while the key is held down.
         KeyboardShortcuts.onKeyDown(for: .toggleRecording) { [weak self] in
@@ -142,6 +148,13 @@ final class RecordingCoordinator {
 
     // MARK: - Meeting capture
 
+    /// Answers the question the panel has marked, in the second window.
+    func answerCaughtQuestion() {
+        guard let caught = meetingQuestions.caught else { return }
+        meetingAnswer.ask(caught.question, context: meetingTranscript.lines)
+        meetingQuestions.markAnswered()
+    }
+
     /// Brings the panel up without recording anything.
     func showMeetingPanel() {
         onMeetingPanelShow?()
@@ -160,6 +173,21 @@ final class RecordingCoordinator {
             return
         }
         meetingTranscript.reset()
+        meetingQuestions.reset()
+        meetingAnswer.dismiss()
+        // Every finished line from the other side is looked at — see
+        // QuestionCatcher for what that sends and why a rule can't do it.
+        meetingTranscript.onLine = { [weak self] lines in
+            guard let self, ModuleCatalog.isEnabled("meeting") else { return }
+            Task {
+                await self.meetingQuestions.consider(lines: lines)
+                // Answering without being asked is opt-in: it spends money and
+                // puts a window on screen while someone is still talking.
+                if Prefs.meetingAutoAnswer, self.meetingQuestions.caught != nil {
+                    self.answerCaughtQuestion()
+                }
+            }
+        }
         meeting.onChunk = { [weak self] chunk in
             MeetingCaptureProbe.shared.note(chunk)
             self?.meetingTranscript.accept(chunk)

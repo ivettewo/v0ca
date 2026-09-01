@@ -25,6 +25,17 @@ enum Prefs {
         /// "Screenshot optimization" module is on; the module decides whether the
         /// setting exists at all, the setting decides whether it applies.
         static let optimizeScreenshots = "optimizeScreenshots"
+        /// Meeting panel: how loud a buffer has to be to count as speech, and how
+        /// long a line may run before it is cut. Both are drawn in the mockup as
+        /// the trigger threshold and the segmentation window.
+        static let meetingThreshold = "meetingThreshold"
+        static let meetingWindowSeconds = "meetingWindowSeconds"
+        /// Named preset the two numbers came from — "свой" once they are edited.
+        static let meetingProfile = "meetingProfile"
+        /// Answer a caught question without being asked to.
+        static let meetingAutoAnswer = "meetingAutoAnswer"
+        /// How sure the classifier has to be before a line is marked.
+        static let meetingConfidence = "meetingConfidence"
         static let soundStart = "soundStart"
         static let soundDone = "soundDone"
         static let historyLimit = "historyLimit"
@@ -143,6 +154,41 @@ enum Prefs {
             case .ask: "sparkles"
             case .screen: "display"
             case .meeting: "bubble.left.and.bubble.right"
+            }
+        }
+    }
+
+    /// Ready-made pairs of segmentation settings. An interview is short
+    /// exchanges where a late line is a lost answer; a meeting is longer turns
+    /// where cutting mid-sentence is worse than waiting.
+    enum MeetingProfile: String, CaseIterable {
+        case interview
+        case meeting
+        case custom
+
+        var label: String {
+            switch self {
+            case .interview: "Собеседование"
+            case .meeting: "Встреча"
+            case .custom: "Свой"
+            }
+        }
+
+        var hint: String {
+            switch self {
+            case .interview: "Короткие реплики, ответ нужен быстро"
+            case .meeting: "Длинные реплики, лучше не резать на полуслове"
+            case .custom: "Значения заданы вручную"
+            }
+        }
+
+        /// Threshold and window; nil for the custom profile, which keeps
+        /// whatever is stored.
+        var values: (threshold: Double, window: Double)? {
+            switch self {
+            case .interview: (0.008, 2.5)
+            case .meeting: (0.006, 4)
+            case .custom: nil
             }
         }
     }
@@ -289,6 +335,29 @@ enum Prefs {
     }
 
     /// Use the fn key (🌐 Globe) as the recording trigger instead of a Carbon hotkey.
+    /// Loudness above which a buffer counts as speech.
+    static var meetingThreshold: Double {
+        let stored = UserDefaults.standard.double(forKey: Key.meetingThreshold)
+        return stored > 0 ? stored : 0.006
+    }
+
+    /// Seconds of unbroken speech after which a line is cut anyway.
+    static var meetingWindowSeconds: Double {
+        let stored = UserDefaults.standard.double(forKey: Key.meetingWindowSeconds)
+        return stored > 0 ? stored : 3
+    }
+
+    static var meetingAutoAnswer: Bool {
+        UserDefaults.standard.bool(forKey: Key.meetingAutoAnswer)
+    }
+
+    /// Below this the model is guessing, and a wrong mark costs more than a
+    /// missed one.
+    static var meetingConfidence: Double {
+        let stored = UserDefaults.standard.double(forKey: Key.meetingConfidence)
+        return stored > 0 ? stored : 0.5
+    }
+
     static var doublePressLatch: Bool {
         UserDefaults.standard.bool(forKey: Key.doublePressLatch)
     }

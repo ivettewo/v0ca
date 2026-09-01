@@ -12,7 +12,7 @@ import Foundation
 struct SpeechSegmenter {
     /// Loud enough to be speech. From settings — the mockup calls it the
     /// trigger threshold.
-    var threshold: Float = 0.006
+    var threshold: Float
     /// Quiet buffers in a row that end an utterance. At ~10 buffers a second
     /// this is roughly a second of silence.
     var silenceToEnd = 10
@@ -21,7 +21,15 @@ struct SpeechSegmenter {
     /// Continuous speech is cut here so the transcript keeps up rather than
     /// waiting for a pause that may never come. The mockup calls it the
     /// segmentation window.
-    var maxSamples = 48_000
+    var maxSamples: Int
+
+    /// Reads both knobs from settings once, at the start of a call: changing
+    /// them mid-conversation would move the goalposts between two lines.
+    @MainActor
+    init() {
+        threshold = Float(Prefs.meetingThreshold)
+        maxSamples = Int(Prefs.meetingWindowSeconds * 16_000)
+    }
 
     private var buffer: [Float] = []
     private var quietRun = 0

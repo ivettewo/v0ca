@@ -60,13 +60,11 @@ of the last 8 lines, run continuously. That contradicts the privacy line on the 
 a classifier means the conversation leaves the Mac all the time, not once per
 question.
 
-Three ways out, and this is a product decision, not a technical one:
-- run the classifier and rewrite the promise honestly — the lines go to a
-  classifier;
-- keep the promise and use heuristics, accepting that indirect questions are
-  missed;
-- find a local model for classification — the only option that keeps both, and
-  the only one whose cost we don't know yet.
+**Decided: the classifier, with the promise rewritten.** The module page now
+says plainly that the other side's lines go to the chosen model so it can judge
+whether a question was asked. Heuristics were rejected for the reason above, and
+a local classifier stays open as a later improvement — it would keep both
+promises, and its cost is still unknown.
 
 **2. "Text only, nothing leaves the network" for the knowledge base.** The
 working implementation indexes with OpenAI `text-embedding-3-small` over the network — the
