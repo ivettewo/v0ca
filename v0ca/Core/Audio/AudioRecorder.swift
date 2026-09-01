@@ -14,6 +14,10 @@ final class AudioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegat
 
     /// RMS level for the HUD waveform, called on the main thread.
     var onLevel: ((Float) -> Void)?
+    /// Every chunk as it arrives, on the capture queue. Dictation takes the whole
+    /// recording at the end; the meeting panel needs it while it is still going,
+    /// and a second capture session on the same device is not an option.
+    var onSamples: (@Sendable ([Float]) -> Void)?
 
     private static let whisperSettings: [String: Any] = [
         AVFormatIDKey: kAudioFormatLinearPCM,
@@ -97,6 +101,7 @@ final class AudioRecorder: NSObject, AVCaptureAudioDataOutputSampleBufferDelegat
         lock.lock()
         samples.append(contentsOf: chunk)
         lock.unlock()
+        onSamples?(chunk)
 
         var sum: Float = 0
         for sample in chunk {

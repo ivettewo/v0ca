@@ -96,18 +96,36 @@ enum Prefs {
         case dictation
         case ask
         case screen
+        /// Listens to both sides of a call and raises the conversation panel.
+        /// Only offered while the meeting module is on.
+        case meeting
 
         var label: String {
             switch self {
             case .dictation: "Диктовка"
             case .ask: "Спросить"
             case .screen: "Экран"
+            case .meeting: "Митинг"
+            }
+        }
+
+        /// Modes a module brings in: absent from the bar while it is off.
+        var moduleID: String? {
+            self == .meeting ? "meeting" : nil
+        }
+
+        /// The modes on offer right now — the built-in three plus whatever the
+        /// switched-on modules contribute.
+        static var available: [Self] {
+            allCases.filter { mode in
+                mode.moduleID.map(ModuleCatalog.isEnabled) ?? true
             }
         }
 
         /// True for the modes that send anything over the network. Drives the
         /// violet accents: red must stay the colour of "this stays on device".
-        var isRemote: Bool { self != .dictation }
+        /// A meeting is recognized on device, so it stays red.
+        var isRemote: Bool { self == .ask || self == .screen }
 
         /// Where the audio and the text go — shown above the mode list.
         var route: String {
@@ -115,6 +133,7 @@ enum Prefs {
             case .dictation: "На устройстве · ничего не покидает Mac"
             case .ask: "Ваши проиндексированные заметки · ответ от модели по API"
             case .screen: "Весь экран уходит в модель по API"
+            case .meeting: "Обе стороны звонка · расшифровка на устройстве"
             }
         }
 
@@ -123,6 +142,7 @@ enum Prefs {
             case .dictation: "mic"
             case .ask: "sparkles"
             case .screen: "display"
+            case .meeting: "bubble.left.and.bubble.right"
             }
         }
     }

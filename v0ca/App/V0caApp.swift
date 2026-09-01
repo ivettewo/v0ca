@@ -1,3 +1,4 @@
+import OSLog
 import SwiftUI
 
 @main
@@ -57,6 +58,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private(set) lazy var settingsWindow = SettingsWindowController(coordinator: coordinator)
     private lazy var onboardingWindow = OnboardingWindowController(models: coordinator.models)
     private var hud: HUDPanelController?
+    private var meetingPanel: MeetingPanelController?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         // Debug rendering of onboarding screenshots — renders and quits the app.
@@ -65,6 +67,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         Theme.apply()
         hud = HUDPanelController(coordinator: coordinator)
+        // The panel comes up empty: settings first, recording when the person
+        // is ready. Only the panel starts a call.
+        let meetingPanel = MeetingPanelController(coordinator: coordinator)
+        self.meetingPanel = meetingPanel
+        coordinator.onMeetingPanelToggle = { meetingPanel.toggle() }
+        coordinator.onMeetingPanelShow = { meetingPanel.show() }
         coordinator.onMicDenied = { [weak self] in
             self?.settingsWindow.show(tab: .permissions)
         }

@@ -199,7 +199,7 @@ struct HUDModeMenu: View {
             Divider().overlay(Tokens.surface2)
 
             VStack(spacing: 0) {
-                ForEach(Prefs.HUDMode.allCases, id: \.self) { item in
+                ForEach(Prefs.HUDMode.available, id: \.self) { item in
                     row(item)
                 }
             }
@@ -256,6 +256,9 @@ extension Prefs.HUDMode {
         case .dictation: Tokens.accent
         case .ask: Tokens.remote
         case .screen: Tokens.capture
+        // Calm on purpose: picking the mode only opens the panel, and the
+        // accent has to stay the colour of "recording right now".
+        case .meeting: Tokens.conversation
         }
     }
 }

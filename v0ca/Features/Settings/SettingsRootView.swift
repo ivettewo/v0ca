@@ -213,7 +213,7 @@ struct SettingsRootView: View {
     private var content: some View {
         if tab.isFullBleed {
             switch tab {
-            case .modules: ModulesTab()
+            case .modules: ModulesTab(coordinator: coordinator)
             default: EmptyView()
             }
         } else {

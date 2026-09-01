@@ -9,6 +9,8 @@ import SwiftUI
 /// The switch writes `module.<id>.enabled` and nothing else — wiring modules to
 /// what they actually do comes later.
 struct ModulesTab: View {
+    let coordinator: RecordingCoordinator
+
     @State private var selection: String = ModuleCatalog.all.first?.id ?? ""
 
     private static let listWidth: CGFloat = 230
@@ -86,7 +88,7 @@ struct ModulesTab: View {
     @ViewBuilder
     private var panel: some View {
         if let module = ModuleCatalog.all.first(where: { $0.id == selection }) {
-            ModulePanel(module: module)
+            ModulePanel(module: module, coordinator: coordinator)
         } else {
             Color.clear
         }
@@ -149,11 +151,13 @@ private struct ModuleRow: View {
 
 private struct ModulePanel: View {
     let module: ModuleInfo
+    let coordinator: RecordingCoordinator
 
     @AppStorage private var enabled: Bool
 
-    init(module: ModuleInfo) {
+    init(module: ModuleInfo, coordinator: RecordingCoordinator) {
         self.module = module
+        self.coordinator = coordinator
         _enabled = AppStorage(wrappedValue: false, module.defaultsKey)
     }
 
@@ -217,6 +221,8 @@ private struct ModulePanel: View {
                     linkRow(title: title, url: url)
                 case .settingPreview(let location, let title, let subtitle):
                     settingPreview(location: location, title: title, subtitle: subtitle)
+                case .control(let id):
+                    control(id)
                 case .formPreview(let location, let title, let placeholder, let action):
                     formPreview(
                         location: location, title: title,
@@ -263,6 +269,16 @@ private struct ModulePanel: View {
                 .font(Tokens.mono(11))
                 .foregroundStyle(Tokens.text3)
                 .padding(.leading, 4)
+        }
+    }
+
+    /// A control the module owns rather than describes. Only the meeting module
+    /// has one so far: capture with nowhere to show itself until the panel
+    /// exists, so it shows itself here.
+    @ViewBuilder
+    private func control(_ id: String) -> some View {
+        if id == "meeting.capture" {
+            MeetingCaptureControl(coordinator: coordinator, moduleEnabled: enabled)
         }
     }
 
@@ -339,4 +355,42 @@ private struct ModulePanel: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
+}
+
+// MARK: - Meeting panel
+
+/// Opens the conversation panel from the module page — useful when the bar is
+/// switched off and there is no mode to pick. Recording itself starts in the
+/// panel: opening it must not put a microphone on the table.
+private struct MeetingCaptureControl: View {
+    let coordinator: RecordingCoordinator
+    let moduleEnabled: Bool
+
+    private var recorder: MeetingRecorder { coordinator.meeting }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            DSButton(variant: .primary) {
+                coordinator.showMeetingPanel()
+            } label: {
+                Text(L("Открыть панель"))
+            }
+            .disabled(!moduleEnabled)
+
+            if recorder.isRunning {
+                HStack(spacing: 7) {
+                    Circle()
+                        .fill(Tokens.accent)
+                        .frame(width: 7, height: 7)
+                    Text(L("Идёт запись"))
+                        .font(Tokens.sans(12.5))
+                        .foregroundStyle(Tokens.text2)
+                }
+            } else if !moduleEnabled {
+                Text(L("Включите модуль переключателем сверху"))
+                    .font(Tokens.sans(12.5))
+                    .foregroundStyle(Tokens.text3)
+            }
+        }
+    }
 }

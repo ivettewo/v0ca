@@ -34,6 +34,9 @@ enum Tokens {
     /// The "Screen" mode: a whole screenshot leaves the Mac. Blue keeps it apart
     /// from the violet of a text question — same family of risk, different act.
     static let capture = Color(hex: 0x55A9CE)
+    /// The "Meeting" mode: nothing leaves the Mac, but nothing is being recorded
+    /// yet either — a calm slate, so the accent keeps meaning "recording now".
+    static let conversation = Color(hex: 0x5F7A8A)
     static let processing = Color(hex: 0xE8A13C)
     static let success = Color(hex: 0x3EAF6E)
     /// "Granted" badge background (onboarding).

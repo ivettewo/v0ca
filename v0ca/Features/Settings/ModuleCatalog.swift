@@ -17,6 +17,9 @@ enum ModuleBlock {
     /// Same idea for a module that adds a whole form rather than a switch: the
     /// card, its field and its button, drawn as they will appear.
     case formPreview(where: String, title: String, placeholder: String, action: String)
+    /// A live control the module page owns. Named rather than closured so the
+    /// catalog stays data; the tab maps the name to what it does.
+    case control(id: String)
 }
 
 /// A module as the Modules screen sees it: a name, a line of pitch and a page
@@ -39,7 +42,7 @@ struct ModuleInfo: Identifiable {
 }
 
 enum ModuleCatalog {
-    static let all: [ModuleInfo] = [polza, screenshot, stats]
+    static let all: [ModuleInfo] = [meeting, polza, screenshot, stats]
 
     /// Is the module on? Reads `UserDefaults` directly so non-UI code (the
     /// provider catalog, the ask flow) can ask without holding a view's storage.
@@ -49,6 +52,23 @@ enum ModuleCatalog {
     }
 
     // MARK: - Real modules
+
+    private static let meeting = ModuleInfo(
+        id: "meeting",
+        title: "Панель разговора",
+        tagline: "Расшифровка звонка с разделением сторон",
+        icon: "bubble.left.and.bubble.right",
+        body: [
+            .text("Слушает обе стороны звонка: микрофон — это вы, звук, который играет машина, — собеседник. Стороны берутся из источника, поэтому реплики не приходится угадывать."),
+            .bullets([
+                "Речь режется на реплики по паузам и распознаётся по ходу разговора",
+                "Распознавание идёт на устройстве, звук на диск не пишется",
+                "Нужно разрешение «Запись экрана» — системный звук на macOS приходит через него",
+            ]),
+            .text("Панель открывается пустой: сначала можно задать название разговора, а запись начинается кнопкой в самой панели. Режим «Митинг» в полоске делает то же самое."),
+            .control(id: "meeting.capture"),
+        ]
+    )
 
     private static let polza = ModuleInfo(
         id: "polza",

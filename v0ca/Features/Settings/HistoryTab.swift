@@ -18,7 +18,7 @@ struct HistoryTab: View {
 
     /// One timeline for everything; the filter only hides rows.
     private enum Filter: Hashable, CaseIterable {
-        case all, dictation, ask, screen
+        case all, dictation, ask, screen, meeting
 
         var label: String {
             switch self {
@@ -26,6 +26,7 @@ struct HistoryTab: View {
             case .dictation: "Диктовка"
             case .ask: "Спросить"
             case .screen: "Экран"
+            case .meeting: "Разговор"
             }
         }
 
@@ -35,6 +36,7 @@ struct HistoryTab: View {
             case .dictation: record.kind == .dictation
             case .ask: record.kind == .ask
             case .screen: record.kind == .screen
+            case .meeting: record.kind == .meeting
             }
         }
     }

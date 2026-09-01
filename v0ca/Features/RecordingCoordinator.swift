@@ -32,6 +32,10 @@ final class RecordingCoordinator {
     let providerKeys = ProviderKeyStore()
     /// The "Ask" flow. Only used when that mode is selected in the bar.
     let ask: AskSession
+    /// Both sides of a call, and the transcript they turn into. Only alive while
+    /// the meeting module is on — steps 1–2 of docs/modules/MEETING-BUILD.md.
+    let meeting = MeetingRecorder()
+    let meetingTranscript: MeetingTranscript
 
     var modelState: ModelManager.LoadState { models.loadState }
 
@@ -40,6 +44,9 @@ final class RecordingCoordinator {
     @ObservationIgnored var onMicDenied: (() -> Void)?
     /// Screen Recording permission missing — same tab.
     @ObservationIgnored var onScreenDenied: (() -> Void)?
+    /// Shows or hides the conversation panel; the panel decides when to record.
+    @ObservationIgnored var onMeetingPanelToggle: (() -> Void)?
+    @ObservationIgnored var onMeetingPanelShow: (() -> Void)?
 
     @ObservationIgnored private let recorder = AudioRecorder()
     @ObservationIgnored private let fnMonitor = FnHotkeyMonitor()
@@ -73,6 +80,7 @@ final class RecordingCoordinator {
             keys: providerKeys, history: history,
             stats: stats, achievements: achievements
         )
+        meetingTranscript = MeetingTranscript(models: models)
 
         // Push-to-talk: recording lasts while the key is held down.
         KeyboardShortcuts.onKeyDown(for: .toggleRecording) { [weak self] in
@@ -132,6 +140,40 @@ final class RecordingCoordinator {
         }
     }
 
+    // MARK: - Meeting capture
+
+    /// Brings the panel up without recording anything.
+    func showMeetingPanel() {
+        onMeetingPanelShow?()
+    }
+
+    /// Starts listening to both sides to both sides, or
+    /// finishes the call and files what was said into the history.
+    func toggleMeeting() async {
+        if meeting.isRunning {
+            await meeting.stop()
+            meetingTranscript.flush()
+            // The tail of the last line is still being recognized; file the
+            // conversation once the queue is empty rather than losing it.
+            await meetingTranscript.waitForIdle()
+            history.addConversation(meetingTranscript.lines, title: meetingTranscript.title)
+            return
+        }
+        meetingTranscript.reset()
+        meeting.onChunk = { [weak self] chunk in
+            MeetingCaptureProbe.shared.note(chunk)
+            self?.meetingTranscript.accept(chunk)
+        }
+        do {
+            try await meeting.start()
+        } catch {
+            log.error("Митинг не начался: \(error)")
+            if case MeetingRecorder.Failure.noScreenPermission = error {
+                onScreenDenied?()
+            }
+        }
+    }
+
     /// Retry starting the fn monitor — in case Accessibility was granted
     /// after the app launched. Idempotent.
     func startFnMonitorIfNeeded() {
@@ -155,6 +197,8 @@ final class RecordingCoordinator {
     private static let doubleTapWindow: Duration = .milliseconds(350)
 
     private func recordingKeyDown() {
+        // A meeting is not push-to-talk: nobody holds a key for an hour.
+        guard !isMeetingMode else { return }
         // Toggle mode acts on key up; there is nothing to do on the way down.
         guard isPushToTalk else { return }
         pressStartedAt = Date()
@@ -176,6 +220,10 @@ final class RecordingCoordinator {
     }
 
     private func recordingKeyUp() {
+        guard !isMeetingMode else {
+            toggle()
+            return
+        }
         guard isPushToTalk else {
             toggle()
             return
@@ -198,6 +246,17 @@ final class RecordingCoordinator {
     }
 
     func toggle() {
+        // In meeting mode the key only brings the panel up: a call starts when
+        // the person is ready, from the panel itself, not the instant the mode
+        // is picked. While a call is running the panel stays put.
+        if isMeetingMode {
+            if meeting.isRunning {
+                onMeetingPanelShow?()
+            } else {
+                onMeetingPanelToggle?()
+            }
+            return
+        }
         switch state {
         case .hidden, .done:
             start()
@@ -225,6 +284,13 @@ final class RecordingCoordinator {
 
     private var isScreenMode: Bool {
         Prefs.hudAlwaysVisible && Prefs.hudMode == .screen
+    }
+
+    /// The bar is set to Meeting: the recording key runs a conversation instead
+    /// of dictating a line into whatever has focus.
+    private var isMeetingMode: Bool {
+        Prefs.hudAlwaysVisible && Prefs.hudMode == .meeting
+            && ModuleCatalog.isEnabled("meeting")
     }
 
     /// Grabs the display and keeps it in memory until the recording ends.

@@ -125,7 +125,7 @@ struct GeneralTab: View {
             SettingRow(title: L("Отменить запись")) {
                 ShortcutField(name: .cancelRecording)
             }
-            ForEach(Prefs.HUDMode.allCases, id: \.self) { mode in
+            ForEach(Prefs.HUDMode.available, id: \.self) { mode in
                 RowDivider()
                 SettingRow(
                     title: L("Режим «%@»", L(mode.label)),

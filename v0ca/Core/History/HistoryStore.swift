@@ -76,6 +76,33 @@ final class HistoryStore {
         save()
     }
 
+    /// A finished conversation. The lines are flattened into the record's text —
+    /// the panel keeps the structure while the call is live; the history keeps
+    /// what was said. No audio: a call is never written to disk.
+    func addConversation(_ lines: [MeetingLine], title: String = "") {
+        guard !lines.isEmpty else { return }
+        let named = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        let body = lines
+            .map { "\($0.side == .me ? "Я" : "Собеседник"): \($0.text)" }
+            .joined(separator: "\n")
+        // The title, when there is one, is the first line: history rows show the
+        // beginning of the text, and "Синк по релизу" reads better than "Я: ага".
+        let text = named.isEmpty ? body : named + "\n" + body
+        let duration = lines.last.map { $0.startedAt.timeIntervalSince(lines[0].startedAt) } ?? 0
+        let record = HistoryRecord(
+            id: UUID(),
+            date: lines[0].startedAt,
+            duration: max(0, duration),
+            text: text,
+            favorite: false,
+            fileName: nil,
+            kind: .meeting
+        )
+        records.insert(record, at: 0)
+        enforceLimits()
+        save()
+    }
+
     func delete(_ id: UUID) {
         guard let record = records.first(where: { $0.id == id }) else { return }
         if let url = audioURL(for: record) {

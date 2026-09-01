@@ -562,6 +562,43 @@ enum L10n {
         "Все модули идут с приложением — скачивать нечего.":
             "Every module ships with the app — there is nothing to download.",
 
+        // Meeting panel
+        "Митинг": "Meeting",
+        "Обе стороны звонка · расшифровка на устройстве":
+            "Both sides of the call · transcribed on device",
+        "Без названия": "Untitled",
+        "Идёт запись": "Recording",
+        "Слушаю…": "Listening…",
+        "Запись не идёт": "Not recording",
+        "Реплики появятся здесь, как только кто-нибудь заговорит.":
+            "Lines will appear here as soon as anyone speaks.",
+        "Задайте название сверху, а затем начните запись — ваши реплики белым, собеседника тёмным.":
+            "Name it above, then start recording — your lines in white, the other side in dark.",
+        "Скопировать разговор": "Copy the conversation",
+        "Завершить": "Finish",
+        "Начать": "Start",
+        "Разговор": "Conversation",
+
+        // Modules — meeting panel
+        "Панель разговора": "Conversation panel",
+        "Расшифровка звонка с разделением сторон": "A call transcribed, side by side",
+        "Слушает обе стороны звонка: микрофон — это вы, звук, который играет машина, — собеседник. Стороны берутся из источника, поэтому реплики не приходится угадывать.":
+            "Listens to both sides of a call: the microphone is you, what the machine plays is the other side. The side comes from the source, so no line has to be guessed.",
+        "Речь режется на реплики по паузам и распознаётся по ходу разговора":
+            "Speech is cut into lines at the pauses and recognized as the call goes",
+        "Распознавание идёт на устройстве, звук на диск не пишется":
+            "Recognition runs on device; the audio is never written to disk",
+        "Нужно разрешение «Запись экрана» — системный звук на macOS приходит через него":
+            "Needs the Screen Recording permission — that is how system audio arrives on macOS",
+        "Панель открывается пустой: сначала можно задать название разговора, а запись начинается кнопкой в самой панели. Режим «Митинг» в полоске делает то же самое.":
+            "The panel opens empty: name the conversation first, and start recording with the button inside it. The Meeting mode in the bar does the same.",
+        "Открыть панель": "Open the panel",
+        "Остановить": "Stop",
+        "Слушаю": "Listening",
+        "Распознаю…": "Recognizing…",
+        "Включите модуль переключателем сверху": "Switch the module on with the toggle above",
+        "Собеседник": "Other side",
+
         // Modules — extended stats
         "Расширенная статистика": "Extended stats",
         "Длина записей и ещё 19 достижений": "Recording length and 19 more achievements",

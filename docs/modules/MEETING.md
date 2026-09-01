@@ -96,10 +96,12 @@ All of these were verified against a working implementation, not guessed.
   paragraphs joined to ~900 characters with 150 of overlap, embeddings in batches
   of 64, one JSON index, cosine search by brute force with a 0.2 floor and top-8.
   For a personal folder brute force is instant; no vector database.
-- **Microphone through `AVCaptureSession`, not `AVAudioEngine`** — the reason
-  that matters here: it creates no aggregate device and does not touch the
-  output. During a call, an aggregate device is a way to break Zoom's
-  own audio. Our `AudioRecorder` uses `AVAudioEngine` and will need checking.
+- **Microphone through `AVCaptureSession`, not `AVAudioEngine`** — it creates no
+  aggregate device and never touches the output, and during a call an aggregate
+  device is a way to break Zoom's own audio. Our `AudioRecorder` already works
+  this way and already produces 16 kHz mono Float32, which is what the engine
+  wants: the microphone side of the meeting needs no new capture code, only a
+  second consumer of the samples it already has.
 - **Streaming answers.** `AsyncThrowingStream` over `URLSession.bytes` with
   `"stream": true`. Our `ProviderClient` waits for the whole answer, which is
   fine for a one-line "Ask" and not fine for a panel.

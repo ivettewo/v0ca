@@ -7,6 +7,8 @@ struct HistoryRecord: Codable, Identifiable, Equatable {
         case dictation
         case ask
         case screen
+        /// A call recorded by the meeting panel: many lines, two sides, no audio.
+        case meeting
     }
 
     let id: UUID
